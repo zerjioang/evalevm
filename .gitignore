@@ -1,0 +1,7 @@
+vendor
+*.exe
+evalevm
+.DS_Store
+.idea
+*.pdf
+tools
