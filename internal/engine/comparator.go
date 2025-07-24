@@ -4,7 +4,9 @@ import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/tool/byteinspector"
 	"evalevm/internal/tool/ethersolve"
+	"evalevm/internal/tool/evm_cfg"
 	"evalevm/internal/tool/evm_cfg_builder"
+	"evalevm/internal/tool/evmole"
 	"evalevm/internal/tool/honeybadger"
 	"evalevm/internal/tool/paper"
 	"evalevm/internal/tool/rattle"
@@ -30,8 +32,10 @@ func NewComparator() Comparator {
 		// tool.NewDefectChecker(),
 		ethersolve.NewEthersolveCreator(),
 		ethersolve.NewEthersolveRuntime(),
+		evm_cfg.NewEvmCFG(),
 		evm_cfg_builder.NewEvmCFGBuilder(),
 		//evmlisa.NewEvmLisa(),
+		evmole.NewEVMole(),
 		// tool.NewGigaHorse(),
 		// tool.NewHeimdall(),
 		honeybadger.NewHoneyBadger(),
@@ -56,8 +60,8 @@ func NewComparator() Comparator {
 	}
 	if false {
 		analyzerList = []datatype.Analyzer{
-			ethersolve.NewEthersolveCreator(),
-			ethersolve.NewEthersolveRuntime(),
+			evmole.NewEVMole(),
+			evm_cfg.NewEvmCFG(),
 		}
 	}
 	return Comparator{

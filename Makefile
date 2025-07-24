@@ -9,3 +9,5 @@ setup:
 	cp docker/measure.sh tools/paper/measure.sh
 	cp docker/measure.sh tools/rattle/measure.sh
 	cp docker/measure.sh tools/securify/measure.sh
+	cp docker/measure.sh tools/evmole/measure.sh
+	cp docker/measure.sh tools/evm-cfg/measure.sh
