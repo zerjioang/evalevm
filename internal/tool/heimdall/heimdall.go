@@ -37,3 +37,7 @@ func (scan Heimdal) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Heimdal) ParseOutput(output *datatype.Result) error {
+	return nil
+}

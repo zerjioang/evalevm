@@ -37,3 +37,7 @@ func (scan GigaHorse) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan GigaHorse) ParseOutput(output *datatype.Result) error {
+	return nil
+}

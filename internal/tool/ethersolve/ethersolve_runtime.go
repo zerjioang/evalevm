@@ -10,6 +10,11 @@ type EthersolveRuntime struct {
 	datatype.BytecodeAnalyzer
 }
 
+const noFindings = `[]
+offset,opcode,detection
+offset,opcode,detection
+`
+
 var (
 	//go:embed Dockerfile
 	ethersolveDockerfile string
@@ -48,9 +53,13 @@ func (scan EthersolveRuntime) CreateTask(uid string, bytecode string) []datatype
 				"--entrypoint=bash",
 				"local/ethersolve_runtime",
 				"-c",
-				fmt.Sprintf(`./measure.sh bash -c 'java -jar /opt/ethersolve/artifact/EtherSolve.jar --runtime --tx-origin --re-entrancy --dot %s && cat Analysis_*'`, bytecode),
+				fmt.Sprintf(`./helper.sh ethersolve_runtime %s`, bytecode),
 				// output order: re-entrancy, tx-origin, dot file
 			},
 		),
 	}
+}
+
+func (scan EthersolveRuntime) ParseOutput(output *datatype.Result) error {
+	return parseEthersolveOutput(output)
 }

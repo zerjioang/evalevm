@@ -48,7 +48,7 @@ func (scan EvmCFG) CreateTask(uid string, bytecode string) []datatype.Task {
 	}
 }
 
-func (scan EvmCFG) ParseOutput(output string) *datatype.ScanResult {
+func (scan EvmCFG) ParseOutput(output *datatype.Result) error {
 	// TODO pending
 	return nil
 }

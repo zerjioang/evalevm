@@ -56,3 +56,7 @@ func (scan ByteInspector) CreateTask(uid string, bytecode string) []datatype.Tas
 		),
 	}
 }
+
+func (scan ByteInspector) ParseOutput(output *datatype.Result) error {
+	return nil
+}

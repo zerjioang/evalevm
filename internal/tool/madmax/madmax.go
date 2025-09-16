@@ -37,3 +37,7 @@ func (scan MadMax) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan MadMax) ParseOutput(output *datatype.Result) error {
+	return nil
+}

@@ -1,12 +1,13 @@
 package datatype
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 )
 
 type ResultParser interface {
-	ParseOutput(output string) *ScanResult
+	ParseOutput(output *Result) error
 }
 type Analyzer interface {
 	ResultParser
@@ -19,7 +20,9 @@ type Analyzer interface {
 }
 
 type Task interface {
+	json.Marshaler
 	ID() TaskId
+	TrackerId() string
 	Command() []string
 	FinishChan() chan struct{}
 	Result() *Result
@@ -68,39 +71,39 @@ type BytecodeAnalyzer struct {
 	Dockerfile string
 }
 
-func (a BytecodeAnalyzer) SetupDockerPlatform() BytecodeAnalyzer {
-	a.commonAnalyzerFields.Platform = "linux/arm64"
-	return a
+func (scan BytecodeAnalyzer) SetupDockerPlatform() BytecodeAnalyzer {
+	scan.commonAnalyzerFields.Platform = "linux/arm64"
+	return scan
 }
 
-func (a BytecodeAnalyzer) Headers() []string {
+func (scan BytecodeAnalyzer) Headers() []string {
 	return []string{"name", "url", "deprecated", "last commit", "language"}
 }
 
-func (a BytecodeAnalyzer) Rows() []string {
+func (scan BytecodeAnalyzer) Rows() []string {
 	return []string{
-		a.Name(), a.URL(), fmt.Sprintf("%v", a.Deprecated), a.LastCommit, a.Language,
+		scan.Name(), scan.URL(), fmt.Sprintf("%v", scan.Deprecated), scan.LastCommit, scan.Language,
 	}
 }
 
-func (a BytecodeAnalyzer) CreateTaskId(uid string) TaskId {
+func (scan BytecodeAnalyzer) CreateTaskId(uid string) TaskId {
 	appuid := TaskId{
-		app:        a.AppName,
+		app:        scan.AppName,
 		identifier: uid,
 	}
 	return appuid
 }
 
-func (a BytecodeAnalyzer) DockerfilePath() (string, error) {
-	// Create a temporary file in the default temp directory
-	tmpFile, err := os.CreateTemp("", fmt.Sprintf("%s-*.Dockerfile", a.AppName))
+func (scan BytecodeAnalyzer) DockerfilePath() (string, error) {
+	// Create scan temporary file in the default temp directory
+	tmpFile, err := os.CreateTemp("", fmt.Sprintf("%s-*.Dockerfile", scan.AppName))
 	if err != nil {
 		return "", err
 	}
 	defer tmpFile.Close()
 
 	// Write "hello" into the file
-	if _, err := tmpFile.WriteString(a.Dockerfile); err != nil {
+	if _, err := tmpFile.WriteString(scan.Dockerfile); err != nil {
 		return "", err
 	}
 
@@ -108,10 +111,10 @@ func (a BytecodeAnalyzer) DockerfilePath() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func (a BytecodeAnalyzer) DockerPlatform() string {
-	return a.commonAnalyzerFields.Platform
+func (scan BytecodeAnalyzer) DockerPlatform() string {
+	return scan.commonAnalyzerFields.Platform
 }
 
-func (a BytecodeAnalyzer) ParseOutput(output string) *ScanResult {
+func (scan BytecodeAnalyzer) ParseOutput(output *Result) *ScanResult {
 	return nil
 }

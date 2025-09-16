@@ -37,3 +37,7 @@ func (scan Porosity) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Porosity) ParseOutput(output *datatype.Result) error {
+	return nil
+}

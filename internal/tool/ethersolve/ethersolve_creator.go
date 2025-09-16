@@ -44,9 +44,14 @@ func (scan EthersolveCreator) CreateTask(uid string, bytecode string) []datatype
 				"--entrypoint=bash",
 				"local/ethersolve_creator",
 				"-c",
-				fmt.Sprintf(`touch Analysis_empty && ./measure.sh bash -c 'java -jar /opt/ethersolve/artifact/EtherSolve.jar --creation --tx-origin --re-entrancy --dot %s && cat Analysis_*'`, bytecode),
+				fmt.Sprintf(`./helper.sh ethersolve_creator %s`, bytecode),
+
 				// output order: re-entrancy, tx-origin, dot file
 			},
 		),
 	}
+}
+
+func (scan EthersolveCreator) ParseOutput(output *datatype.Result) error {
+	return parseEthersolveOutput(output)
 }

@@ -46,3 +46,7 @@ func (scan EVMole) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan EVMole) ParseOutput(output *datatype.Result) error {
+	return nil
+}

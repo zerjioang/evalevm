@@ -37,3 +37,7 @@ func (scan AcuaricaEVM) CreateTask(uid string, bytecode string) []datatype.Task 
 		),
 	}
 }
+
+func (scan AcuaricaEVM) ParseOutput(output *datatype.Result) error {
+	return nil
+}

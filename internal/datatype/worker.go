@@ -18,7 +18,10 @@ type TaskId struct {
 
 func (t TaskId) App() string {
 	return t.app
+}
 
+func (t TaskId) UID() string {
+	return t.identifier
 }
 
 type WorkerPool struct {
@@ -77,12 +80,12 @@ func (wp *WorkerPool) worker(workerID int) {
 		}
 
 		elapsed := time.Since(start)
-		output := stdout.String() + stderr.String()
 
 		// Capture result
 		task.WithResult(&Result{
 			Task:             task,
-			Output:           output,
+			Output:           stdout.Bytes(),
+			OutputErr:        stderr.Bytes(),
 			Error:            err,
 			TotalElapsedTime: elapsed,
 		})

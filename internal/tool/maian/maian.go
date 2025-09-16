@@ -37,3 +37,7 @@ func (scan Maian) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Maian) ParseOutput(output *datatype.Result) error {
+	return nil
+}

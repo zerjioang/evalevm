@@ -38,3 +38,7 @@ func (scan Mythril) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Mythril) ParseOutput(output *datatype.Result) error {
+	return nil
+}

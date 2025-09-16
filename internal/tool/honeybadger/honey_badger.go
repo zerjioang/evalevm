@@ -58,8 +58,8 @@ func (scan HoneyBadger) CreateTask(uid string, bytecode string) []datatype.Task 
 	}
 }
 
-func (scan HoneyBadger) ParseOutput(output string) *datatype.ScanResult {
-	_, err := scan.parse(output)
+func (scan HoneyBadger) ParseOutput(output *datatype.Result) error {
+	_, err := scan.parse(output.Output)
 	if err != nil {
 		return &datatype.ScanResult{
 			Error: err,

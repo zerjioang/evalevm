@@ -52,3 +52,7 @@ func (scan Securify) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Securify) ParseOutput(output *datatype.Result) error {
+	return nil
+}

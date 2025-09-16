@@ -3,11 +3,11 @@ package cmd
 import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/engine"
-	"evalevm/internal/export"
 	"evalevm/internal/render"
-	"github.com/spf13/cobra"
 	"log"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 func ScanBytecodeCmd() *cobra.Command {
@@ -39,7 +39,6 @@ func ScanBytecodeCmd() *cobra.Command {
 			taskset := cmp.SubmitAndWait(flags.bytecodeHex)
 
 			log.Println("all tools evaluated and bechmark completed for the evm bytecode sample. exporting results")
-			export.WriteCSV(taskset)
 
 			if err := render.ScanResults(taskset); err != nil {
 				return err
@@ -50,7 +49,7 @@ func ScanBytecodeCmd() *cobra.Command {
 				if !result.Failed() {
 					_ = render.ScanSuccess(datatype.ScanSuccess{
 						Name:   result.ID().App(),
-						Output: result.Result().Output,
+						Output: result.Result().ParsedOutput.String(),
 					})
 				}
 			}
@@ -60,7 +59,7 @@ func ScanBytecodeCmd() *cobra.Command {
 				if result.Failed() {
 					_ = render.ScanError(datatype.ScanErrorDetails{
 						Name:    result.ID().App(),
-						Message: result.Result().Output,
+						Message: string(result.Result().OutputErr),
 					})
 				}
 			}

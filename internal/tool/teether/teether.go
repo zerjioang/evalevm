@@ -37,3 +37,7 @@ func (scan Teether) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Teether) ParseOutput(output *datatype.Result) error {
+	return nil
+}

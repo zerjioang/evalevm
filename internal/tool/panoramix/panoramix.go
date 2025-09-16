@@ -37,3 +37,7 @@ func (scan Panoramix) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Panoramix) ParseOutput(output *datatype.Result) error {
+	return nil
+}

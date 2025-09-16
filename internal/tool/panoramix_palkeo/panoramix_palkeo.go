@@ -37,3 +37,7 @@ func (scan PanoramixPalkeo) CreateTask(uid string, bytecode string) []datatype.T
 		),
 	}
 }
+
+func (scan PanoramixPalkeo) ParseOutput(output *datatype.Result) error {
+	return nil
+}

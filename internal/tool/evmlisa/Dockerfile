@@ -22,7 +22,12 @@ WORKDIR /app
 # Copy the entire EVMLiSA project into the container (latest version)
 COPY . .
 
-RUN chmod +rwx measure.sh
+COPY measure.sh measure.sh
+COPY helper.sh helper.sh
+
+RUN chmod +x /opt/measure.sh && \
+    chmod +x /opt/helper.sh
+
 RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
 # patch perf utility
 RUN rm /usr/bin/perf && ln -s /usr/bin/perf_5.10 /usr/bin/perf

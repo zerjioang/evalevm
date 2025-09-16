@@ -37,3 +37,7 @@ func (scan Osiris) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Osiris) ParseOutput(output *datatype.Result) error {
+	return nil
+}

@@ -37,3 +37,7 @@ func (scan Octopus) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Octopus) ParseOutput(output *datatype.Result) error {
+	return nil
+}

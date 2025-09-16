@@ -84,3 +84,7 @@ func (scan EvmLisa) createTempDir(prefix string) (string, error) {
 	}
 	return tmpDir, nil
 }
+
+func (scan EvmLisa) ParseOutput(output *datatype.Result) error {
+	return nil
+}

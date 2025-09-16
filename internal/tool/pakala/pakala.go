@@ -38,3 +38,7 @@ func (scan Pakala) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Pakala) ParseOutput(output *datatype.Result) error {
+	return nil
+}

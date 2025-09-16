@@ -12,8 +12,10 @@ RUN apt-get update && \
 WORKDIR /opt/conkas
 COPY . .
 
-RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
-RUN chmod +rwx measure.sh
+RUN apt-get update && apt-get install -y gawk jq procps time linux-perf && \
+    chmod +x /opt/conkas/measure.sh && \
+    chmod +x /opt/conkas/helper.sh
+
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir z3-solver --prefer-binary
 

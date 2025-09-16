@@ -3,9 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 func Root(ctx context.Context) *cobra.Command {

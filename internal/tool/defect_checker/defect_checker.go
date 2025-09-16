@@ -38,3 +38,7 @@ func (scan DefectChecker) CreateTask(uid string, bytecode string) []datatype.Tas
 		),
 	}
 }
+
+func (scan DefectChecker) ParseOutput(output *datatype.Result) error {
+	return nil
+}

@@ -37,3 +37,7 @@ func (scan Pyevmasm) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Pyevmasm) ParseOutput(output *datatype.Result) error {
+	return nil
+}

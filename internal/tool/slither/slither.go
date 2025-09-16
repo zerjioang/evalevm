@@ -37,3 +37,7 @@ func (scan Slither) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Slither) ParseOutput(output *datatype.Result) error {
+	return nil
+}

@@ -53,7 +53,7 @@ func (scan Conkas) CreateTask(uid string, bytecode string) []datatype.Task {
 	}
 }
 
-func (scan Conkas) ParseOutput(output string) *datatype.ScanResult {
+func (scan Conkas) ParseOutput(output *datatype.Result) error {
 	// TODO pending
 	return nil
 }

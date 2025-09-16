@@ -49,7 +49,7 @@ func (scan EvmCFGBuilder) CreateTask(uid string, bytecode string) []datatype.Tas
 	}
 }
 
-func (scan EvmCFGBuilder) ParseOutput(output string) *datatype.ScanResult {
+func (scan EvmCFGBuilder) ParseOutput(output *datatype.Result) error {
 	// TODO pending
 	return nil
 }

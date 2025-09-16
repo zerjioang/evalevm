@@ -2,15 +2,8 @@ package engine
 
 import (
 	"evalevm/internal/datatype"
-	"evalevm/internal/tool/byteinspector"
 	"evalevm/internal/tool/ethersolve"
-	"evalevm/internal/tool/evm_cfg"
-	"evalevm/internal/tool/evm_cfg_builder"
-	"evalevm/internal/tool/evmole"
-	"evalevm/internal/tool/honeybadger"
 	"evalevm/internal/tool/paper"
-	"evalevm/internal/tool/rattle"
-	"evalevm/internal/tool/securify"
 	"evalevm/internal/uuid"
 	"log"
 	"runtime"
@@ -27,18 +20,18 @@ type Comparator struct {
 func NewComparator() Comparator {
 	analyzerList := []datatype.Analyzer{
 		// tool.NewAcuaricaEVM(),
-		byteinspector.NewByteInspector(),
-		//conkas.NewConkas(),
+		// byteinspector.NewByteInspector(),
+		// conkas.NewConkas(),
 		// tool.NewDefectChecker(),
 		ethersolve.NewEthersolveCreator(),
 		ethersolve.NewEthersolveRuntime(),
-		evm_cfg.NewEvmCFG(),
-		evm_cfg_builder.NewEvmCFGBuilder(),
-		//evmlisa.NewEvmLisa(),
-		evmole.NewEVMole(),
+		// evm_cfg.NewEvmCFG(),
+		// evm_cfg_builder.NewEvmCFGBuilder(),
+		// evmlisa.NewEvmLisa(),
+		// evmole.NewEVMole(),
 		// tool.NewGigaHorse(),
 		// tool.NewHeimdall(),
-		honeybadger.NewHoneyBadger(),
+		// honeybadger.NewHoneyBadger(),
 		// tool.NewMadMax(),
 		// tool.NewMaian(),
 		// tool.NewManticore(),
@@ -52,17 +45,11 @@ func NewComparator() Comparator {
 		paper.NewPaper(),
 		// tool.NewPorosity(),
 		// tool.NewPyevmasm(),
-		rattle.NewRattle(),
-		securify.NewSecurify(),
+		// rattle.NewRattle(),
+		// securify.NewSecurify(),
 		// tool.NewSlither(),
 		// tool.NewTeether(),
 		// tool.NewVandal(),
-	}
-	if false {
-		analyzerList = []datatype.Analyzer{
-			evmole.NewEVMole(),
-			evm_cfg.NewEvmCFG(),
-		}
 	}
 	return Comparator{
 		analyzerList: analyzerList,

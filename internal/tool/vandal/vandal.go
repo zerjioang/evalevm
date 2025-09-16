@@ -37,3 +37,7 @@ func (scan Vandal) CreateTask(uid string, bytecode string) []datatype.Task {
 		),
 	}
 }
+
+func (scan Vandal) ParseOutput(output *datatype.Result) error {
+	return nil
+}

@@ -54,7 +54,7 @@ func (scan Rattle) CreateTask(uid string, bytecode string) []datatype.Task {
 	}
 }
 
-func (scan Rattle) ParseOutput(output string) *datatype.ScanResult {
+func (scan Rattle) ParseOutput(output *datatype.Result) error {
 	// TODO pending
 	return nil
 }
