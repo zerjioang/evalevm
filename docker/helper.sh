@@ -8,7 +8,7 @@ BYTECODE="${2:-}"
 
 # Only run if input is "creator"
 if [[ "$MODE" == "ethersolve_creator" ]]; then
-    # 1️⃣ Run the measure.sh script inside Docker
+    # run the measure.sh script inside Docker
     ./measure.sh java -jar /opt/ethersolve/artifact/EtherSolve.jar --creation --tx-origin --re-entrancy --dot "$BYTECODE"
     # 3️⃣ Loop through Analysis_* files
     for f in Analysis_*; do
@@ -18,7 +18,7 @@ if [[ "$MODE" == "ethersolve_creator" ]]; then
         echo "<<<"
     done
 elif [[ "$MODE" == "ethersolve_runtime" ]]; then
-    # 1️⃣ Run the measure.sh script inside Docker
+    # run the measure.sh script inside Docker
     ./measure.sh java -jar /opt/ethersolve/artifact/EtherSolve.jar --runtime --tx-origin --re-entrancy --dot "$BYTECODE"
     # 3️⃣ Loop through Analysis_* files
     for f in Analysis_*; do
@@ -26,6 +26,17 @@ elif [[ "$MODE" == "ethersolve_runtime" ]]; then
         cat "$f"
         echo ""
         echo "<<<"
+    done
+elif [[ "$MODE" == "evmlisa" ]]; then
+    # run the measure.sh script inside Docker
+    ./measure.sh java -jar /opt/evmlisa/build/libs/evm-lisa-all.jar --show-all-instructions-in-cfg --checker-all --paper-stats --bytecode "$BYTECODE"
+    for f in execution/results/contract-*/**; do
+      if [ -f "$f" ]; then
+        echo ">>> $f"
+        cat "$f"
+        echo ""
+        echo "<<<"
+      fi
     done
 else
     # Fallback: pass all arguments to measure.sh

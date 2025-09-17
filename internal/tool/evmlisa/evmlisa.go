@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/zerjioang/rooftop/v2/common/io/json"
@@ -60,7 +61,7 @@ func (scan EvmLisa) CreateTask(uid string, bytecode string) []datatype.Task {
 		"-v", resultsMount,
 		"local/evm-lisa",
 		"-c",
-		fmt.Sprintf(`./measure.sh bash -c 'java -jar /opt/evmlisa/build/libs/evm-lisa-all.jar --bytecode %s --stack-size 1024 --stack-set-size 1024 --checker-all'`, bytecode),
+		fmt.Sprintf(`./helper.sh evmlisa %s`, bytecode),
 	}
 
 	return []datatype.Task{
@@ -85,8 +86,17 @@ func (scan EvmLisa) createTempDir(prefix string) (string, error) {
 }
 
 func (scan EvmLisa) ParseOutput(result *datatype.Result) error {
+
+	files, err := parseOffsetData(string(result.Output))
+	if err != nil {
+		return err
+	}
+
+	jsonData := files["results.json"]
+	dotGraph := files["CFG.dot"]
+
 	var dst output
-	if err := json.Unmarshal(result.OutputErr, &dst); err != nil {
+	if err := json.Unmarshal(jsonData.Content, &dst); err != nil {
 		return err
 	}
 
@@ -103,6 +113,14 @@ func (scan EvmLisa) ParseOutput(result *datatype.Result) error {
 		EdgesDetected:        edges,
 		NodesDetected:        len(dst.BasicBlocks),
 	}
+
+	result.ParsedOutput.WithGraph(string(dotGraph.Content))
+	filename := fmt.Sprintf("cfg_%s_%s.svg", result.Task.ID().App(), result.Task.TrackerId())
+	if err := result.ParsedOutput.SaveGraph(string(dotGraph.Content), filename); err != nil {
+		log.Println("failed to save graph: ", err)
+		return err
+	}
+	result.AddFileReference(result.Task.ID().App(), result.Task.TrackerId(), filename)
 
 	return nil
 }
