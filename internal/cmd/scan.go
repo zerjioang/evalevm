@@ -11,6 +11,7 @@ func ScanCmd() *cobra.Command {
 	}
 
 	scanCmd.AddCommand(ScanBytecodeCmd())
+	scanCmd.AddCommand(ScanBytecodeCSVCmd())
 	scanCmd.AddCommand(ScanBytecodeDirCmd())
 
 	return scanCmd

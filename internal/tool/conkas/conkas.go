@@ -41,10 +41,7 @@ func (scan Conkas) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				"--rm",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash",
+				// docker run command already defined. customize the flags here
 				"local/conkas",
 				"-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python /opt/conkas/conkas.py -fav code.evm'`, bytecode),

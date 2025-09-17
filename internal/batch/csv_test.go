@@ -2,11 +2,12 @@ package batch
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
-	"github.com/zerjioang/rooftop/v2/analysis"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+	"github.com/zerjioang/rooftop/v2/analysis"
 )
 
 func TestProcessCSV(t *testing.T) {

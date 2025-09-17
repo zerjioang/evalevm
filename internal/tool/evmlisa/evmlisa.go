@@ -5,6 +5,8 @@ import (
 	"evalevm/internal/datatype"
 	"fmt"
 	"os"
+
+	"github.com/zerjioang/rooftop/v2/common/io/json"
 )
 
 var (
@@ -53,15 +55,12 @@ func (scan EvmLisa) CreateTask(uid string, bytecode string) []datatype.Task {
 
 	// Assemble Docker command arguments
 	dockerArgs := []string{
-		"run",
-		"--rm",
-		"--cap-add=SYS_ADMIN",
-		"--entrypoint=bash",
+		// docker run command already defined. customize the flags here
 		"-v", envMount,
 		"-v", resultsMount,
 		"local/evm-lisa",
 		"-c",
-		fmt.Sprintf(`./measure.sh bash -c 'java -jar /app/build/libs/evm-lisa-all.jar --bytecode %s --stack-size 1024 --stack-set-size 1024 --checker-all'`, bytecode),
+		fmt.Sprintf(`./measure.sh bash -c 'java -jar /opt/evmlisa/build/libs/evm-lisa-all.jar --bytecode %s --stack-size 1024 --stack-set-size 1024 --checker-all'`, bytecode),
 	}
 
 	return []datatype.Task{
@@ -85,6 +84,25 @@ func (scan EvmLisa) createTempDir(prefix string) (string, error) {
 	return tmpDir, nil
 }
 
-func (scan EvmLisa) ParseOutput(output *datatype.Result) error {
+func (scan EvmLisa) ParseOutput(result *datatype.Result) error {
+	var dst output
+	if err := json.Unmarshal(result.OutputErr, &dst); err != nil {
+		return err
+	}
+
+	var asPtrBool = func(b bool) *bool { return &b }
+	vulnerabilities := dst.Vulnerabilities.TxOrigin + dst.Vulnerabilities.RandomnessDependency + dst.Vulnerabilities.Reentrancy
+	edges := 0
+	for _, bb := range dst.BasicBlocks {
+		edges += len(bb.OutgoingEdges)
+	}
+	result.ParsedOutput = &datatype.ScanResult{
+		Vulnerable:           asPtrBool(vulnerabilities > 0),
+		TxOriginVulnerable:   asPtrBool(dst.Vulnerabilities.TxOrigin > 0),
+		ReEntrancyVulnerable: asPtrBool(dst.Vulnerabilities.Reentrancy > 0),
+		EdgesDetected:        edges,
+		NodesDetected:        len(dst.BasicBlocks),
+	}
+
 	return nil
 }

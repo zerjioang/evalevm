@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os/exec"
 	"sync"
@@ -65,18 +64,77 @@ func (wp *WorkerPool) worker(workerID int) {
 
 		start := time.Now() // measure time as late as possible
 
+		var stats *ContainerStats
+
 		if len(task.Command()) > 0 {
-			log.Printf("[Worker %d] Executing command: %s", workerID, task.Command())
-			cmd := exec.CommandContext(ctx, "docker", task.Command()...)
+			containerName := task.ContainerName()
+			cmdArgs := []string{
+				"run",
+				"--rm",
+				"--name", containerName,
+				"--cap-add=SYS_ADMIN",
+				"--entrypoint=bash",
+				"--network", "none", // disable network access for the container
+			}
+			cmdArgs = append(cmdArgs, task.Command()...)
+			log.Printf("[Worker %d] Executing command: %s in container=%s", workerID, cmdArgs, containerName)
+
+			cmd := exec.CommandContext(ctx, "docker", cmdArgs...)
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
 
-			err = cmd.Run()
+			done := make(chan error, 1)
+			go func() {
+				done <- cmd.Run()
+			}()
 
-			// Check for context timeout
-			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-				err = fmt.Errorf("task timed out after 10 minutes")
+			select {
+			case <-ctx.Done():
+				// Timeout or cancellation occurred, collect metrics before killing
+				log.Printf("[Worker %d] Context done: %v, collecting metrics for container %s", workerID, ctx.Err(), containerName)
+
+				// Get container stats (CPU, RAM, MemPerc, I/O)
+				statsCmd := exec.Command("docker", "stats", "--no-stream", "--format",
+					"{{.CPUPerc}}|{{.MemUsage}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}|{{.PIDs}}", containerName)
+				statsOut, statsErr := statsCmd.Output()
+				if statsErr != nil {
+					log.Printf("[Worker %d] Failed to get stats for container %s: %v", workerID, containerName, statsErr)
+				} else {
+					statsLine := string(statsOut)
+					stats = parseContainerStats(statsLine)
+					if stats != nil {
+						log.Printf("[Worker %d] ContainerStats for %s: CPU=%s, MemUsage=%s, MemPerc=%s, NetIO=%s, BlockIO=%s, PIDs=%s", workerID, containerName, stats.CPUPerc, stats.MemUsage, stats.MemPerc, stats.NetIO, stats.BlockIO, stats.PIDs)
+					} else {
+						log.Printf("[Worker %d] Failed to parse stats for container %s: %s", workerID, containerName, statsLine)
+					}
+				}
+
+				// Get container start time for uptime
+				inspectCmd := exec.Command("docker", "inspect", "-f", "{{.State.StartedAt}}", containerName)
+				inspectOut, inspectErr := inspectCmd.Output()
+				if inspectErr != nil {
+					log.Printf("[Worker %d] Failed to inspect container %s: %v", workerID, containerName, inspectErr)
+				} else {
+					startedAt := string(inspectOut)
+					log.Printf("[Worker %d] Container %s started at: %s", workerID, containerName, startedAt)
+					// Optionally, parse startedAt and calculate uptime
+				}
+
+				// Now kill the container
+				log.Printf("[Worker %d] Killing container %s", workerID, containerName)
+				killCmd := exec.Command("docker", "kill", containerName)
+				_ = killCmd.Run() // ignore error, just try to kill
+				err = ctx.Err()
+			case runErr := <-done:
+				if runErr != nil {
+					err = runErr
+				}
 			}
+
+			log.Printf("[Worker %d] Context done: %v, removing container %s", workerID, ctx.Err(), containerName)
+			killCmd := exec.Command("docker", "rm", containerName)
+			_ = killCmd.Run() // ignore error, just try to rm
+			err = ctx.Err()
 		}
 
 		elapsed := time.Since(start)
@@ -88,6 +146,8 @@ func (wp *WorkerPool) worker(workerID int) {
 			OutputErr:        stderr.Bytes(),
 			Error:            err,
 			TotalElapsedTime: elapsed,
+			Timeout:          errors.Is(ctx.Err(), context.DeadlineExceeded),
+			Stats:            stats,
 		})
 
 		task.Parse()
@@ -96,7 +156,7 @@ func (wp *WorkerPool) worker(workerID int) {
 		select {
 		case task.FinishChan() <- struct{}{}:
 		default:
-			log.Printf("[Worker %d] Warning: FinishChan blocked for task %s", workerID, task.ID())
+			log.Printf("[Worker %d] Warning: finish channel blocked for task %s", workerID, task.ID())
 		}
 
 		log.Printf("[Worker %d] Task %s completed in %s", workerID, task.ID(), elapsed)

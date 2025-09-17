@@ -35,17 +35,13 @@ func NewRattle() Rattle {
 }
 
 func (scan Rattle) CreateTask(uid string, bytecode string) []datatype.Task {
-	// docker run --rm -it --entrypoint=bash local/rattle -c 'echo $code > contract.evm && python /opt/rattle/rattle-cli.py --no-split-functions --optimize --input contract.evm
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				"--rm",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash",
+				// docker run command already defined. customize the flags here
 				"local/rattle",
 				"-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python /opt/rattle/rattle-cli.py --no-split-functions --optimize --input code.evm'`, bytecode),

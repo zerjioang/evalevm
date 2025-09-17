@@ -30,6 +30,7 @@ type Task interface {
 	WithResultParser(parser ResultParser)
 	Parse()
 	Failed() bool
+	ContainerName() string // Added for robust container management
 }
 
 type TaskSet []Task

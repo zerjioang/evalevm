@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
+	"log"
+	"strings"
 )
 
 var (
@@ -35,21 +37,33 @@ func NewEvmCFGBuilder() EvmCFGBuilder {
 }
 
 func (scan EvmCFGBuilder) CreateTask(uid string, bytecode string) []datatype.Task {
-	// docker run --rm -it --entrypoint=bash local/evm_cfg_builder -c 'echo 606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806361461954146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000806073606a565b8101905080806001019150915050905600a165627a7a723058201cff09a7222fbd72f9f18386a0a03a1a1f02313950b8306cbdb5ce84ed7749c40029 > contract.evm && evm-cfg-builder contract.evm --export-dot out && cat out/contract.evm_-FULL_GRAPH.dot'
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "--entrypoint=bash", "local/evm_cfg_builder", "-c",
-				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'evm-cfg-builder code.evm --export-dot out && cat out/code.evm_-FULL_GRAPH.dot'`, bytecode),
+				// docker run command already defined. customize the flags here
+				"local/evm_cfg_builder", "-c",
+				fmt.Sprintf(`echo 0x%s > code.evm && ./measure.sh bash -c 'evm-cfg-builder code.evm --export-dot out && cat out/code.evm_-FULL_GRAPH.dot'`, bytecode),
 			},
 		),
 	}
 }
 
 func (scan EvmCFGBuilder) ParseOutput(output *datatype.Result) error {
-	// TODO pending
+	outStr := string(output.Output)
+	output.ParsedOutput = &datatype.ScanResult{
+		EdgesDetected: strings.Count(outStr, "->"),
+		NodesDetected: strings.Count(outStr, "[label="),
+		DotGraph:      outStr,
+	}
+	output.ParsedOutput.WithGraph(outStr)
+	filename := fmt.Sprintf("cfg_%s_%s.svg", output.Task.ID().App(), output.Task.TrackerId())
+	if err := output.ParsedOutput.SaveGraph(outStr, filename); err != nil {
+		log.Println("failed to save graph: ", err)
+		return err
+	}
+	output.AddFileReference(output.Task.ID().App(), output.Task.TrackerId(), filename)
 	return nil
 }

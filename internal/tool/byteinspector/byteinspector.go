@@ -43,12 +43,8 @@ func (scan ByteInspector) CreateTask(uid string, bytecode string) []datatype.Tas
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				"--rm",
 				"--platform",
 				"linux/amd64",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash",
 				"local/byte-inspector",
 				"-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'cd /tacas25/evm-dis/ && ./makeCFG.sh code.evm && cat build/dot/code.evm/code.evm.dot'`, bytecode),

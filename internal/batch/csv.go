@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/zerjioang/rooftop/v2/analysis"
 	"io"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/zerjioang/rooftop/v2/analysis"
 )
 
 // CSVRow represents a row in the CSV file.

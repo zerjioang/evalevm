@@ -142,6 +142,10 @@ func (s *DockerTask) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func (s *DockerTask) ContainerName() string {
+	return fmt.Sprintf("%s_%s", s.id.app, s.sampleId)
+}
+
 // removeBytes removes the subset of b between start (inclusive) and end (exclusive)
 func removeBytes(b []byte, start, end int) []byte {
 	// Validate indices

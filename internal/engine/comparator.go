@@ -3,6 +3,8 @@ package engine
 import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/tool/ethersolve"
+	"evalevm/internal/tool/evm_cfg_builder"
+	"evalevm/internal/tool/evmlisa"
 	"evalevm/internal/tool/paper"
 	"evalevm/internal/uuid"
 	"log"
@@ -26,8 +28,8 @@ func NewComparator() Comparator {
 		ethersolve.NewEthersolveCreator(),
 		ethersolve.NewEthersolveRuntime(),
 		// evm_cfg.NewEvmCFG(),
-		// evm_cfg_builder.NewEvmCFGBuilder(),
-		// evmlisa.NewEvmLisa(),
+		evm_cfg_builder.NewEvmCFGBuilder(),
+		evmlisa.NewEvmLisa(),
 		// evmole.NewEVMole(),
 		// tool.NewGigaHorse(),
 		// tool.NewHeimdall(),
@@ -50,6 +52,17 @@ func NewComparator() Comparator {
 		// tool.NewSlither(),
 		// tool.NewTeether(),
 		// tool.NewVandal(),
+	}
+	return Comparator{
+		analyzerList: analyzerList,
+		threads:      runtime.NumCPU(),
+		pool:         datatype.NewWorkerPool(),
+	}
+}
+
+func NewPaperOnlyComparator() Comparator {
+	analyzerList := []datatype.Analyzer{
+		paper.NewPaper(),
 	}
 	return Comparator{
 		analyzerList: analyzerList,

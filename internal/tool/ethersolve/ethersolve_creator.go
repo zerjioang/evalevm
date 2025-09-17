@@ -38,10 +38,7 @@ func (scan EthersolveCreator) CreateTask(uid string, bytecode string) []datatype
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				"--rm",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash",
+				// docker run command already defined. customize the flags here
 				"local/ethersolve_creator",
 				"-c",
 				fmt.Sprintf(`./helper.sh ethersolve_creator %s`, bytecode),

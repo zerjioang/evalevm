@@ -13,11 +13,8 @@ WORKDIR /opt/evm_cfg_builder
 
 COPY . .
 
-COPY measure.sh measure.sh
-COPY helper.sh helper.sh
-
-RUN chmod +x /opt/measure.sh && \
-    chmod +x /opt/helper.sh
+RUN chmod +x /opt/evm_cfg_builder/measure.sh && \
+    chmod +x /opt/evm_cfg_builder/helper.sh
 
 RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
 RUN pip install --upgrade pip && \

@@ -38,7 +38,7 @@ func ScanBytecodeCmd() *cobra.Command {
 
 			taskset := cmp.SubmitAndWait(flags.bytecodeHex)
 
-			log.Println("all tools evaluated and bechmark completed for the evm bytecode sample. exporting results")
+			log.Println("all tools evaluated and benchmark completed for the evm bytecode sample. exporting results")
 
 			if err := render.ScanResults(taskset); err != nil {
 				return err

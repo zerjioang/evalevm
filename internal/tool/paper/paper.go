@@ -3,6 +3,7 @@ package paper
 import (
 	_ "embed"
 	"evalevm/internal/datatype"
+	"evalevm/internal/parser"
 	"fmt"
 	"log"
 	"strings"
@@ -46,10 +47,7 @@ func (scan Paper) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				//"--rm",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash", // alpine
+				// docker run command already defined. customize the flags here
 				"local/paper:latest",
 				"-c",
 				fmt.Sprintf(`./measure.sh /app/detector-linux.elf %s`, bytecode),
@@ -59,41 +57,63 @@ func (scan Paper) CreateTask(uid string, bytecode string) []datatype.Task {
 }
 
 type paperOutput struct {
-	Name                string `json:"name"`
-	ExecTimeMs          int    `json:"exec_time_ms"`
-	ExecTimeMicros      int    `json:"exec_time_micros"`
-	Errored             bool   `json:"errored"`
-	Error               string `json:"error"`
-	Timeout             bool   `json:"timeout"`
-	MetadataDetected    bool   `json:"metadata_detected"`
-	MetadataSection     string `json:"metadata_section"`
-	MetadataHash        string `json:"metadata_hash"`
-	MetadataSectionSize int    `json:"metadata_section_size"`
-	SolidityVersion     string `json:"solidity_version"`
-	CfgNodeCount        int    `json:"cfg_node_count"`
-	Bytecode            string `json:"bytecode"`
-	IsOnlyRuntime       bool   `json:"is_only_runtime"`
-	Vulnerabilities     []any  `json:"vulnerabilities"`
-	Graphs              struct {
-		Runtime     string `json:".runtime"`
-		Constructor string `json:".constructor"`
-	} `json:"graphs"`
+	Name                string      `json:"name"`
+	ExecTimeMs          int         `json:"exec_time_ms"`
+	ExecTimeMicros      int         `json:"exec_time_micros"`
+	Errored             bool        `json:"errored"`
+	Error               string      `json:"error"`
+	Timeout             bool        `json:"timeout"`
+	MetadataDetected    bool        `json:"metadata_detected"`
+	MetadataSection     string      `json:"metadata_section"`
+	MetadataHash        string      `json:"metadata_hash"`
+	MetadataSectionSize int         `json:"metadata_section_size"`
+	SolidityVersion     string      `json:"solidity_version"`
+	CfgNodeCount        int         `json:"cfg_node_count"`
+	Bytecode            string      `json:"bytecode"`
+	IsOnlyRuntime       bool        `json:"is_only_runtime"`
+	Vulnerabilities     []any       `json:"vulnerabilities"`
+	Graphs              Graphs      `json:"graphs"`
+	SectionData         SectionData `json:"section_data"`
+	Coverage            float64     `json:"coverage"`
+}
+type Graphs struct {
+	Runtime     string `json:".runtime"`
+	Constructor string `json:".constructor"`
+}
+type SectionStats struct {
+	RenderedBlocks           int     `json:"rendered_blocks"`
+	ExecutedBlocks           int     `json:"executed_blocks"`
+	TotalBlocks              int     `json:"total_blocks"`
+	Coverage                 float64 `json:"coverage"`
+	HiddenBlocks             int     `json:"hidden_blocks"`
+	OpcodeRenderInstruction  int     `json:"opcode_render_instruction"`
+	YulRenderInstruction     int     `json:"yul_render_instruction"`
+	YulImprovementPercentage float64 `json:"yul_improvement_percentage"`
+}
+type SectionData struct {
+	Runtime     SectionStats `json:".runtime"`
+	Constructor SectionStats `json:".constructor"`
 }
 
 func (scan Paper) ParseOutput(output *datatype.Result) error {
 
+	outJson, err := parser.ExtractBetween(string(output.Output), "paper_output_begin", "paper_output_end")
+	if err != nil {
+		return fmt.Errorf("failed to parse output: %w", err)
+	}
+
 	var dst paperOutput
-	if err := json.Unmarshal(output.Output, &dst); err != nil {
+	if err := json.Unmarshal([]byte(outJson), &dst); err != nil {
 		log.Println("failed to parse output: ", err)
 	}
 
 	// count how many nodes are defined in the CFG
 	// example: 119 [label="119: EXIT BLOCK\l" fillcolor=crimson ];
-	nodesDetected := strings.Count(string(output.Output), " [label=")
+	nodesDetected := strings.Count(dst.Graphs.Constructor, ` [label="0x`) + strings.Count(dst.Graphs.Runtime, ` [label="0x`)
 
 	// count how many edges are defined in the CFG
 	// example: 119 -> 118 [label="119 -> 118\l" ];
-	edgesDetected := strings.Count(string(output.Output), " -> ")
+	edgesDetected := strings.Count(dst.Graphs.Constructor, " -> ") + strings.Count(dst.Graphs.Runtime, " -> ")
 
 	var asPtrBool = func(b bool) *bool { return &b }
 	output.ParsedOutput = &datatype.ScanResult{
@@ -101,6 +121,7 @@ func (scan Paper) ParseOutput(output *datatype.Result) error {
 		Error:         nil,
 		EdgesDetected: edgesDetected,
 		NodesDetected: nodesDetected,
+		Coverage:      &dst.Coverage,
 	}
 	if dst.Graphs.Constructor != "" {
 		filename := fmt.Sprintf("cfg_%s_%s_constructor.svg", output.Task.ID().App(), output.Task.TrackerId())

@@ -33,7 +33,7 @@ func (scan Mythril) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "hello-world",
+				"hello-world",
 			},
 		),
 	}

@@ -3,8 +3,9 @@ package render
 import (
 	"evalevm/internal/datatype"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"os"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 func ScanResults(items datatype.TaskSet) error {

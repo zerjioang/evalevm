@@ -41,7 +41,8 @@ func (scan EvmCFG) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "--entrypoint=bash", "local/evm-cfg", "-c",
+				// docker run command already defined. customize the flags here
+				"local/evm-cfg", "-c",
 				fmt.Sprintf(`./measure.sh bash -c '/opt/evm-cfg/evm-cfg %s -o cfg.dot && cat cfg.dot'`, bytecode),
 			},
 		),

@@ -32,7 +32,8 @@ func (scan MadMax) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "hello-world",
+				// docker run command already defined. customize the flags here
+				"hello-world",
 			},
 		),
 	}

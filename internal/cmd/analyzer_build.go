@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"evalevm/internal/engine"
+
 	"github.com/spf13/cobra"
 )
 
@@ -10,6 +11,7 @@ func AnalyzerBuildCmd() *cobra.Command {
 
 	type buildflags struct {
 		toolsPath string
+		force     bool
 	}
 	var flags buildflags
 
@@ -26,7 +28,7 @@ func AnalyzerBuildCmd() *cobra.Command {
 			tools := cmp.Analyzers()
 			for _, analyzer := range tools {
 				var b engine.Builder
-				if err := b.Build(cmd.Context(), flags.toolsPath, analyzer); err != nil {
+				if err := b.Build(cmd.Context(), flags.toolsPath, analyzer, flags.force); err != nil {
 					return err
 				}
 			}
@@ -35,6 +37,7 @@ func AnalyzerBuildCmd() *cobra.Command {
 	}
 
 	buildCmd.PersistentFlags().StringVarP(&flags.toolsPath, "tools", "t", "", "tools path")
+	buildCmd.PersistentFlags().BoolVarP(&flags.force, "force", "f", false, "force rebuild even if image exists")
 
 	return buildCmd
 }

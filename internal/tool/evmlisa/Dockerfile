@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y wget unzip git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /app
+WORKDIR /opt/evmlisa
 
 # Clone the EVMLiSA repository (latest stable version)
 # RUN git clone https://github.com/lisa-analyzer/evm-lisa.git .
@@ -22,11 +22,8 @@ WORKDIR /app
 # Copy the entire EVMLiSA project into the container (latest version)
 COPY . .
 
-COPY measure.sh measure.sh
-COPY helper.sh helper.sh
-
-RUN chmod +x /opt/measure.sh && \
-    chmod +x /opt/helper.sh
+RUN chmod +x /opt/evmlisa/measure.sh && \
+    chmod +x /opt/evmlisa/helper.sh
 
 RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
 # patch perf utility
@@ -36,7 +33,7 @@ RUN rm /usr/bin/perf && ln -s /usr/bin/perf_5.10 /usr/bin/perf
 RUN gradle assemble
 
 # Create results directory
-RUN mkdir -p /app/execution/results
+RUN mkdir -p /opt/evmlisa/execution/results
 
 # Set the entry point of the container
-ENTRYPOINT ["java", "-jar", "/app/build/libs/evm-lisa-all.jar"]
+ENTRYPOINT ["java", "-jar", "/opt/evmlisa/build/libs/evm-lisa-all.jar"]

@@ -40,7 +40,8 @@ func (scan EVMole) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "--entrypoint=bash", "local/evmole", "-c",
+				// docker run command already defined. customize the flags here
+				"local/evmole", "-c",
 				fmt.Sprintf(`./measure.sh bash -c 'python3 /opt/evmole/run.py %s'`, bytecode),
 			},
 		),

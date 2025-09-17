@@ -46,10 +46,7 @@ func (scan HoneyBadger) CreateTask(uid string, bytecode string) []datatype.Task 
 			scan.Options,
 			bytecode,
 			[]string{
-				"run",
-				"--rm",
-				"--cap-add=SYS_ADMIN",
-				"--entrypoint=bash",
+				// docker run command already defined. customize the flags here
 				"local/honeybadger",
 				"-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python honeybadger/honeybadger.py -b -s code.evm'`, bytecode),

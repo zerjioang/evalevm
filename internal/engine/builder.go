@@ -5,20 +5,17 @@ import (
 	"evalevm/internal/datatype"
 	"fmt"
 	"log"
+	"os/exec"
 	"time"
 )
 
 type Builder struct{}
 
-func (b *Builder) Build(ctx context.Context, toolsPath string, analyzer datatype.Analyzer) error {
-	// docker build -t conkas:latest .
-	// docker run --rm -v "$(pwd)":/work -w /work conkas:latest \
-	// python3 /opt/conkas/conkas.py contract.bin
-
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Minute)
+func (b *Builder) Build(ctx context.Context, toolsPath string, analyzer datatype.Analyzer, force bool) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	log.Println("Running Docker command...")
+	log.Println("running docker build command...")
 
 	dockerImageName := fmt.Sprintf("local/%s:latest", analyzer.Name())
 	dockerfilePath, err := analyzer.DockerfilePath()
@@ -26,7 +23,20 @@ func (b *Builder) Build(ctx context.Context, toolsPath string, analyzer datatype
 		return err
 	}
 	toolRepoRootPath := toolsPath + "/" + analyzer.Name()
-	args := []string{
+
+	// Check if image exists locally
+	imageExists := false
+	inspectCmd := exec.CommandContext(ctx, "docker", "image", "inspect", dockerImageName)
+	if err := inspectCmd.Run(); err == nil {
+		imageExists = true
+	}
+
+	if imageExists && !force {
+		log.Printf("Docker image %s already exists locally. Skipping build.", dockerImageName)
+		return nil
+	}
+
+	buildArgs := []string{
 		"build",
 		"--platform", analyzer.DockerPlatform(),
 		"-t", dockerImageName,
@@ -34,13 +44,13 @@ func (b *Builder) Build(ctx context.Context, toolsPath string, analyzer datatype
 	}
 
 	log.Println(dockerfilePath, toolRepoRootPath)
-	log.Println(args)
+	log.Println(buildArgs)
 
-	return RunDockerCommand(ctx, args, func(line string, isStderr bool) {
+	return RunDockerCommand(ctx, buildArgs, func(line string, isStderr bool) {
 		if isStderr {
-			fmt.Printf("ERR: %s\n", line)
+			fmt.Printf("err: %s\n", line)
 		} else {
-			fmt.Printf("OUT: %s\n", line)
+			fmt.Printf("out: %s\n", line)
 		}
 	})
 }

@@ -45,8 +45,8 @@ func (scan Securify) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN",
-				"--platform", scan.Platform, "--entrypoint=bash", "local/securify", "-c",
+				// docker run command already defined. customize the flags here
+				"--platform", scan.Platform, "local/securify", "-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'java -Xms512m -Xmx2048m -jar /securify_jar/securify.jar -fh code.evm'`, bytecode),
 			},
 		),

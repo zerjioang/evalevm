@@ -76,6 +76,12 @@ setup:
 generate-images: build setup
 	./dist/$(BINARY) analyzer build --tools ./tools
 
+scan-csv: build
+	./dist/$(BINARY) scan csv --dataset /Users/sergio/Desktop/phd/dataset_eth_mainnet/unique_eth_contracts_order_by_size_2015.csv
+
+scan-minimal: build
+	./dist/$(BINARY) scan evm --bytecode 0x606060405260e060020a60003504631f50eadc8114601a575b005b6004356060908152602080822060243514825290f3
+
 scan-sample: build
 	 ./dist/$(BINARY) scan evm --bytecode 0x60606040526000543411601157600080fd5b60015473ffffffffffffffffffffffffffffffffffffffff1663d7bb99ba6247b760346040518363ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401600060405180830381858988f15050505050500000a165627a7a72305820d43c494964b14aa56c5eee3c28da8f5049cd2c382d21ee39a116116b5c1253db0029
 

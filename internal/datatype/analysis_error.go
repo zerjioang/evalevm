@@ -10,14 +10,15 @@ import (
 
 type ScanResult struct {
 	// Vulnerable flag set to true if the analysis found at least one vulnerability
-	Vulnerable           *bool  `json:"vulnerable,omitempty"`
-	Error                error  `json:"error,omitempty"`
-	EdgesDetected        int    `json:"edges,omitempty"`
-	NodesDetected        int    `json:"nodes,omitempty"`
-	TxOriginVulnerable   *bool  `json:"tx_origin_vulnerable,omitempty"`
-	ReEntrancyVulnerable *bool  `json:"re_entrancy_vulnerable,omitempty"`
-	CFGCreated           bool   `json:"cfg_created,omitempty"`
-	DotGraph             string `json:"dot_graph,omitempty"`
+	Vulnerable           *bool    `json:"vulnerable,omitempty"`
+	Error                error    `json:"error,omitempty"`
+	EdgesDetected        int      `json:"edges,omitempty"`
+	NodesDetected        int      `json:"nodes,omitempty"`
+	TxOriginVulnerable   *bool    `json:"tx_origin_vulnerable,omitempty"`
+	ReEntrancyVulnerable *bool    `json:"re_entrancy_vulnerable,omitempty"`
+	CFGCreated           bool     `json:"cfg_created,omitempty"`
+	DotGraph             string   `json:"dot_graph,omitempty"`
+	Coverage             *float64 `json:"coverage,omitempty"`
 }
 
 func (s *ScanResult) WithGraph(dot string) {
@@ -31,6 +32,9 @@ func (s *ScanResult) SaveGraph(dot string, filename string) error {
 }
 
 func (s *ScanResult) String() string {
+	if s == nil {
+		return ""
+	}
 	dot := s.DotGraph
 	s.DotGraph = ""
 	raw, _ := json.Marshal(s)
