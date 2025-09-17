@@ -14,6 +14,7 @@ type ScanResult struct {
 	Error                error    `json:"error,omitempty"`
 	EdgesDetected        int      `json:"edges,omitempty"`
 	NodesDetected        int      `json:"nodes,omitempty"`
+	OrphanNodesInGraph   int      `json:"orphan_nodes,omitempty"`
 	TxOriginVulnerable   *bool    `json:"tx_origin_vulnerable,omitempty"`
 	ReEntrancyVulnerable *bool    `json:"re_entrancy_vulnerable,omitempty"`
 	CFGCreated           bool     `json:"cfg_created,omitempty"`
@@ -22,8 +23,23 @@ type ScanResult struct {
 }
 
 func (s *ScanResult) WithGraph(dot string) {
+
+	if dot == "" {
+		return
+	}
 	s.DotGraph = dot
 	s.CFGCreated = len(dot) > 0
+
+	var nodesRead int
+	nodesRead, s.OrphanNodesInGraph, _ = CountOrphanNodes(dot)
+	if s.NodesDetected == 0 {
+		s.NodesDetected = nodesRead
+	}
+	if s.Coverage == nil || *s.Coverage == 0 {
+		// calculate coverage based on .dot file data instead of tool result
+		readCoverage := float64((nodesRead-s.OrphanNodesInGraph)*100) / float64(nodesRead)
+		s.Coverage = &readCoverage
+	}
 }
 
 func (s *ScanResult) SaveGraph(dot string, filename string) error {
