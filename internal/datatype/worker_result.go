@@ -88,7 +88,7 @@ func (r *Result) Rows() []string {
 	}
 	return []string{
 		boldWhite.Sprint(appName),
-		boldWhite.Sprint(r.Task.TrackerId()[0:40] + "..."),
+		boldWhite.Sprint(r.Task.TrackerId()),
 		status,
 		beautifyRAM(r.Measurements.MaxRAMKb),
 		fmt.Sprintf("%s (%d ms)", beautifyTimeWithUnits(r.Measurements.ExecTimeMs), r.Measurements.ExecTimeMs),

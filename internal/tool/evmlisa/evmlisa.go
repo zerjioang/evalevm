@@ -41,7 +41,7 @@ func NewEvmLisa() EvmLisa {
 	return app
 }
 
-func (scan EvmLisa) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan EvmLisa) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	// docker run --rm -v $(pwd)/.env:/app/.env -v $(pwd)/execution/docker:/app/execution/results docker.io/library/evm-lisa:latest --bytecode 0x366028576000600060006000303173f43febf30d4a00fa9b23e49e36e7acb5ca8591616103e8f1005b6388c2a0bf60e060020a026000526000358043116077574390036001016003023562ffffff16600452600060006024600060007306012c8cf97bead5deae237070f9587f8e7a266d6103e85a03f15b00 --stack-size 1024 --stack-set-size 1024 --checker-all
 	// Define volume mounts based on the scanner working directory
 	if scan.WorkDir == "" {
@@ -69,6 +69,7 @@ func (scan EvmLisa) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			dockerArgs,
 		),
 	}

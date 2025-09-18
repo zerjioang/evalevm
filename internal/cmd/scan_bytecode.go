@@ -36,7 +36,7 @@ func ScanBytecodeCmd() *cobra.Command {
 			cmp := engine.NewComparator()
 			cmp.Start()
 
-			taskset := cmp.SubmitAndWait(flags.bytecodeHex)
+			taskset := cmp.SubmitAndWait(flags.bytecodeHex, "")
 
 			log.Println("all tools evaluated and benchmark completed for the evm bytecode sample. exporting results")
 

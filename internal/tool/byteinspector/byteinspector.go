@@ -35,13 +35,14 @@ func NewByteInspector() ByteInspector {
 	return app
 }
 
-func (scan ByteInspector) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan ByteInspector) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	// docker run --rm -it --entrypoint=bash local/byte-inspector -c "echo 0x366028576000600060006000303173f43febf30d4a00fa9b23e49e36e7acb5ca8591616103e8f1005b6388c2a0bf60e060020a026000526000358043116077574390036001016003023562ffffff16600452600060006024600060007306012c8cf97bead5deae237070f9587f8e7a266d6103e85a03f15b00 > code.evm && /tacas25/evm-dis/measure.sh bash -c '/tacas25/evm-dis/makeCFG.sh code.evm && cat build/dot/code.evm/code.evm.dot'"
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				"--platform",
 				"linux/amd64",

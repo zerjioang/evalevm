@@ -53,7 +53,8 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("failed to read file: %w", err)
 				}
-				taskset := cmp.SubmitAndWait(string(content))
+				filebase := filepath.Base(file)
+				taskset := cmp.SubmitAndWait(string(content), filebase)
 				alltasks = append(alltasks, taskset)
 			}
 

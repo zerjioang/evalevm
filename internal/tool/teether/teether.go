@@ -25,12 +25,13 @@ func NewTeether() Teether {
 	return app
 }
 
-func (scan Teether) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan Teether) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				"run", "--rm", "--cap-add=SYS_ADMIN", "hello-world",
 			},

@@ -26,12 +26,13 @@ func NewMythril() Mythril {
 	return app
 }
 
-func (scan Mythril) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan Mythril) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				"hello-world",
 			},

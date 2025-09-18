@@ -79,7 +79,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 					Bytecode:  record[2],
 				}
 				log.Printf("submitting task: %s\n", row.Bytecode)
-				taskset := cmp.SubmitAndWait(row.Bytecode)
+				taskset := cmp.SubmitAndWait(row.Bytecode, row.Address)
 				forceFail := false
 				for _, result := range taskset {
 					if result.Failed() {

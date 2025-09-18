@@ -37,13 +37,14 @@ func NewSecurify() Securify {
 	return app
 }
 
-func (scan Securify) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan Securify) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	// docker run --rm -it --platform linux/amd64 --entrypoint=bash docker.io/local/securify:latest -c 'echo 0x60008080803473d7c02a75d24e5a0f8140488877874cd880dafe155af1602457600080fd5b00 > contract.evm && java -jar /securify_jar/securify.jar -fh contract.evm
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				// docker run command already defined. customize the flags here
 				"--platform", scan.Platform, "local/securify", "-c",

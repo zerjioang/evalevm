@@ -88,13 +88,13 @@ func (c Comparator) Start() {
 	go c.pool.Run()
 }
 
-func (c Comparator) Submit(hexBytecode string) datatype.TaskSet {
+func (c Comparator) Submit(hexBytecode string, sampleId string) datatype.TaskSet {
 	// we scan the contract bytecode with all the tools
 	taskId := uuid.UUIDv4()
 	var ts datatype.TaskSet
 	for _, analyzer := range c.analyzerList {
 		hexBytecode = c.cleanBytecode(hexBytecode)
-		taskList := analyzer.CreateTask(taskId, hexBytecode)
+		taskList := analyzer.CreateTask(taskId, hexBytecode, sampleId)
 		for _, task := range taskList {
 			ts = append(ts, task)
 			task.WithResultParser(analyzer)
@@ -104,7 +104,7 @@ func (c Comparator) Submit(hexBytecode string) datatype.TaskSet {
 	return ts
 }
 
-func (c Comparator) SubmitAndWait(hexBytecode string) datatype.TaskSet {
+func (c Comparator) SubmitAndWait(hexBytecode string, sampleId string) datatype.TaskSet {
 	log.Println("submit and wait")
 	var wg sync.WaitGroup
 
@@ -114,7 +114,7 @@ func (c Comparator) SubmitAndWait(hexBytecode string) datatype.TaskSet {
 	taskId := uuid.UUIDv4()
 	for _, analyzer := range c.analyzerList {
 		hexBytecode = c.cleanBytecode(hexBytecode)
-		taskList := analyzer.CreateTask(taskId, hexBytecode)
+		taskList := analyzer.CreateTask(taskId, hexBytecode, sampleId)
 		for _, task := range taskList {
 			ts = append(ts, task)
 			wg.Add(1)

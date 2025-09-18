@@ -25,12 +25,13 @@ func NewMadMax() MadMax {
 	return app
 }
 
-func (scan MadMax) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan MadMax) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				// docker run command already defined. customize the flags here
 				"hello-world",

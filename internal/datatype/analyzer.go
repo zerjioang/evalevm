@@ -14,7 +14,7 @@ type Analyzer interface {
 	Renderable
 	Name() string
 	URL() string
-	CreateTask(uid string, bytecode string) []Task
+	CreateTask(uid string, bytecode string, filename string) []Task
 	DockerfilePath() (string, error)
 	DockerPlatform() string
 }

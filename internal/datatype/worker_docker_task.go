@@ -29,13 +29,17 @@ func (s *DockerTask) TrackerId() string {
 	return s.sampleId
 }
 
-func NewDockerTask(id TaskId, opts BytecodeScanOpts, hexBytecode string, cmd []string) *DockerTask {
+func NewDockerTask(id TaskId, opts BytecodeScanOpts, hexBytecode string, filename string, cmd []string) *DockerTask {
+	sampleId := ""
+	if filename == "" {
+		sampleId = sha256Hex(hexBytecode)
+	}
 	return &DockerTask{
 		id:          id,
 		cmd:         cmd,
 		opts:        opts,
 		hexBytecode: hexBytecode,
-		sampleId:    sha256Hex(hexBytecode),
+		sampleId:    sampleId,
 		finishCh:    make(chan struct{}, 1),
 		debug:       false,
 	}

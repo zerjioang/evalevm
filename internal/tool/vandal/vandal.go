@@ -35,12 +35,13 @@ func NewVandal() Vandal {
 	return app
 }
 
-func (scan Vandal) CreateTask(uid string, bytecode string) []datatype.Task {
+func (scan Vandal) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
 			scan.Options,
 			bytecode,
+			filename,
 			[]string{
 				// "bin/decompile -n -v -g graph.html examples/dao_hack.hex"
 				"--platform", "linux/amd64",
