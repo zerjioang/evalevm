@@ -10,6 +10,7 @@ import (
 	"evalevm/internal/tool/evmole"
 	"evalevm/internal/tool/paper"
 	"evalevm/internal/tool/rattle"
+	"evalevm/internal/tool/vandal"
 	"evalevm/internal/uuid"
 	"log"
 	"runtime"
@@ -55,7 +56,7 @@ func NewComparator() Comparator {
 		// securify.NewSecurify(),
 		// tool.NewSlither(),
 		// tool.NewTeether(),
-		// tool.NewVandal(),
+		vandal.NewVandal(),
 	}
 	return Comparator{
 		analyzerList: analyzerList,

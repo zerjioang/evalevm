@@ -73,6 +73,9 @@ setup:
 	cp docker/measure.sh tools/evm-cfg/measure.sh
 	cp docker/helper.sh tools/evm-cfg/helper.sh
 
+	cp docker/measure.sh tools/vandal/measure.sh
+	cp docker/helper.sh tools/vandal/helper.sh
+
 generate-images: build setup
 	./dist/$(BINARY) analyzer build --tools ./tools
 

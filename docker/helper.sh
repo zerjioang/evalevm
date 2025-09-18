@@ -41,7 +41,20 @@ elif [[ "$MODE" == "evmlisa" ]]; then
 elif [[ "$MODE" == "rattle" ]]; then
     # run the measure.sh script inside Docker
     echo "$BYTECODE" > code.evm
-    ./measure.sh python3 /rattle/rattle-cli.py --no-split-functions --optimize --input code.evm
+    ./measure.sh python3 /opt/rattle/rattle-cli.py --no-split-functions --optimize --input code.evm
+    rm code.evm
+    for f in *.dot; do
+      if [ -f "$f" ]; then
+        echo ">>> $f"
+        cat "$f"
+        echo ""
+        echo "<<<"
+      fi
+    done
+elif [[ "$MODE" == "vandal" ]]; then
+    # run the measure.sh script inside Docker
+    echo "$BYTECODE" > code.evm
+    ./measure.sh python3 /vandal/bin/decompile -n -v -g graph.dot code.evm
     rm code.evm
     for f in *.dot; do
       if [ -f "$f" ]; then

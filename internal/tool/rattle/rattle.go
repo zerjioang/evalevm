@@ -44,7 +44,7 @@ func (scan Rattle) CreateTask(uid string, bytecode string) []datatype.Task {
 				// docker run command already defined. customize the flags here
 				"local/rattle",
 				"-c",
-				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python /opt/rattle/rattle-cli.py --no-split-functions --optimize --input code.evm'`, bytecode),
+				fmt.Sprintf(`./helper.sh rattle %s`, bytecode),
 			},
 		),
 	}
