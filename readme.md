@@ -1,15 +1,18 @@
 ## How to use this repository
 
-This repository is used to evaluate many different EVM security tools at once saving engineers and researcher many hours. First you need to build all the docker images on you device. To do so, run:
+This repository is used to evaluate many different EVM security tools at once saving engineers and researcher many
+hours. First you need to build all the docker images on you device. To do so, run:
 
 ```go
 go build && ./evalevm analyzer build --tools ./tools
 ```
 
 > Make sure to point to ./tools directory of this same repository as the code will be used to create the images.
+
 ## Analyzers out of scope
 
-The following analyzers and research tools are not considered because they require either Solidity, Vyper source code or ABI files definitions. Our initial selection of tools focus only on those that work with the bytecode only.
+The following analyzers and research tools are not considered because they require either Solidity, Vyper source code or
+ABI files definitions. Our initial selection of tools focus only on those that work with the bytecode only.
 
 * SmartCheck: this tool needs the contract source code to work.
 
@@ -80,7 +83,8 @@ contract Game {
 
 In EVM, the current block.hash is always zero.
 
-<code>blockhash</code> function returns a non-zero value only for 256 last blocks. Besides, it always returns 0 for the current block, i.e. <code>blockhash(block.number)</code> always equals to 0.
+<code>blockhash</code> function returns a non-zero value only for 256 last blocks. Besides, it always returns 0 for the
+current block, i.e. <code>blockhash(block.number)</code> always equals to 0.
 
 ```solidity
 pragma solidity 0.8.16;
@@ -94,7 +98,8 @@ contract C {
 
 ## Contract that can lock Ether
 
-In the following example, contracts programmed to receive ether does not call <code>transfer</code>, <code>send</code>, or <code>call.value</code> function
+In the following example, contracts programmed to receive ether does not call <code>transfer</code>, <code>send</code>,
+or <code>call.value</code> function
 
 ```solidity
 pragma solidity 0.4.25;
@@ -105,7 +110,6 @@ contract BadMarketPlace {
     }
 }
 ```
-
 
 ## Infinite loop
 
@@ -123,7 +127,8 @@ contract GreaterOrEqualToZero {
 }
 ```
 
-In this case, <code>i >= 0</code> condition will always evaluate to true. The next value of <code>i</code> variable after <code>0</code> will be <code>2**256-1</code>. Thus, the loop will be infinite.
+In this case, <code>i >= 0</code> condition will always evaluate to true. The next value of <code>i</code> variable
+after <code>0</code> will be <code>2**256-1</code>. Thus, the loop will be infinite.
 
 ```solidity
 contract Malicious {
