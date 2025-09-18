@@ -54,13 +54,9 @@ func parseEthersolveOutput(output *datatype.Result) error {
 		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
 		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
 	}
-	output.ParsedOutput.WithGraph(dotGraph)
-	filename := fmt.Sprintf("cfg_%s_%s.svg", output.Task.ID().App(), output.Task.TrackerId())
-	if err := output.ParsedOutput.SaveGraph(dotGraph, filename); err != nil {
-		log.Println("failed to save graph: ", err)
-		return err
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
 	}
-	output.AddFileReference(output.Task.ID().App(), output.Task.TrackerId(), filename)
 
 	return nil
 }

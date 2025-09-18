@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/zerjioang/rooftop/v2/common/io/json"
@@ -115,13 +114,9 @@ func (scan EvmLisa) ParseOutput(result *datatype.Result) error {
 		NodesDetected:        len(dst.BasicBlocks),
 	}
 
-	result.ParsedOutput.WithGraph(string(dotGraph.Content))
-	filename := fmt.Sprintf("cfg_%s_%s.svg", result.Task.ID().App(), result.Task.TrackerId())
-	if err := result.ParsedOutput.SaveGraph(string(dotGraph.Content), filename); err != nil {
-		log.Println("failed to save graph: ", err)
-		return err
+	if err := result.ParsedOutput.WithGraph(string(dotGraph.Content), "", result); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
 	}
-	result.AddFileReference(result.Task.ID().App(), result.Task.TrackerId(), filename)
 
 	return nil
 }

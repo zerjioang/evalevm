@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -59,12 +58,8 @@ func (scan EvmCFGBuilder) ParseOutput(output *datatype.Result) error {
 		NodesDetected: strings.Count(outStr, "[label="),
 		DotGraph:      outStr,
 	}
-	output.ParsedOutput.WithGraph(outStr)
-	filename := fmt.Sprintf("cfg_%s_%s.svg", output.Task.ID().App(), output.Task.TrackerId())
-	if err := output.ParsedOutput.SaveGraph(outStr, filename); err != nil {
-		log.Println("failed to save graph: ", err)
-		return err
+	if err := output.ParsedOutput.WithGraph(outStr, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
 	}
-	output.AddFileReference(output.Task.ID().App(), output.Task.TrackerId(), filename)
 	return nil
 }

@@ -59,13 +59,13 @@ type Result struct {
 func (r *Result) Headers() []string {
 	return []string{
 		"sota tool",
-		"contract hash",
+		"sample id",
 		"status",
-		"memory",
+		"max ram",
 		"time",
-		"avg_cpu",
-		"edges",
+		"avg cpu",
 		"nodes",
+		"edges",
 		"connected",
 	}
 }
@@ -93,8 +93,8 @@ func (r *Result) Rows() []string {
 		beautifyRAM(r.Measurements.MaxRAMKb),
 		fmt.Sprintf("%s (%d ms)", beautifyTimeWithUnits(r.Measurements.ExecTimeMs), r.Measurements.ExecTimeMs),
 		fmt.Sprintf("%.2f %%", r.Measurements.AvgCPUPercent),
-		fmt.Sprintf("%d", results.EdgesDetected),
 		fmt.Sprintf("%d", results.NodesDetected),
+		fmt.Sprintf("%d", results.EdgesDetected),
 		fmt.Sprintf("%s %%", toFloat(results.Coverage)),
 	}
 }

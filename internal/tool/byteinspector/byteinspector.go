@@ -3,7 +3,9 @@ package byteinspector
 import (
 	_ "embed"
 	"evalevm/internal/datatype"
+	"evalevm/internal/parser"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -55,5 +57,27 @@ func (scan ByteInspector) CreateTask(uid string, bytecode string, filename strin
 }
 
 func (scan ByteInspector) ParseOutput(output *datatype.Result) error {
+	dotGraph, err := parser.ExtractBetween(string(output.Output), "*/", "//----------------- Minimised CFG -------------------")
+	if err != nil {
+		return fmt.Errorf("failed to parse output: %w", err)
+	}
+	nodesDetected := strings.Count(dotGraph, " [label=")
+
+	// count how many edges are defined in the CFG
+	// example: 119 -> 118 [label="119 -> 118\l" ];
+	edgesDetected := strings.Count(dotGraph, " -> ")
+
+	//var asPtrBool = func(b bool) *bool { return &b }
+	output.ParsedOutput = &datatype.ScanResult{
+		Vulnerable:           nil, //asPtrBool(findingsDetected),
+		Error:                nil,
+		EdgesDetected:        edgesDetected,
+		NodesDetected:        nodesDetected,
+		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
+		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
+	}
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
 	return nil
 }

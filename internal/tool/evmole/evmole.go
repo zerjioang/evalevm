@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
+	"strings"
 )
 
 type EVMole struct {
@@ -43,12 +44,23 @@ func (scan EVMole) CreateTask(uid string, bytecode string, filename string) []da
 			[]string{
 				// docker run command already defined. customize the flags here
 				"local/evmole", "-c",
-				fmt.Sprintf(`./measure.sh bash -c 'python3 /opt/evmole/run.py %s'`, bytecode),
+				fmt.Sprintf(`./measure.sh bash -c 'python3 /opt/evmole/run.py 0x%s'`, bytecode),
 			},
 		),
 	}
 }
 
 func (scan EVMole) ParseOutput(output *datatype.Result) error {
+	dotGraph := string(output.Output)
+
+	output.ParsedOutput = &datatype.ScanResult{
+		EdgesDetected: strings.Count(dotGraph, "->"),
+		NodesDetected: strings.Count(dotGraph, `[label="Block`),
+		DotGraph:      dotGraph,
+	}
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
+
 	return nil
 }

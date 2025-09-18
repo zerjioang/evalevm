@@ -3,7 +3,9 @@ package rattle
 import (
 	_ "embed"
 	"evalevm/internal/datatype"
+	"evalevm/internal/parser"
 	"fmt"
+	"strings"
 )
 
 type Rattle struct {
@@ -52,6 +54,21 @@ func (scan Rattle) CreateTask(uid string, bytecode string, filename string) []da
 }
 
 func (scan Rattle) ParseOutput(output *datatype.Result) error {
-	// TODO pending
+	dotGraph, err := parser.ExtractBetween(string(output.Output), ">>> cfg.dot", "<<<")
+	if err != nil {
+		return fmt.Errorf("failed to parse .dot output: %w", err)
+	}
+	//var asPtrBool = func(b bool) *bool { return &b }
+	output.ParsedOutput = &datatype.ScanResult{
+		Vulnerable:           nil, //asPtrBool(findingsDetected),
+		Error:                nil,
+		EdgesDetected:        strings.Count(dotGraph, " -> block_"),
+		NodesDetected:        strings.Count(dotGraph, ` [label="`),
+		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
+		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
+	}
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
 	return nil
 }

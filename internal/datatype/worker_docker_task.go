@@ -30,7 +30,7 @@ func (s *DockerTask) TrackerId() string {
 }
 
 func NewDockerTask(id TaskId, opts BytecodeScanOpts, hexBytecode string, filename string, cmd []string) *DockerTask {
-	sampleId := ""
+	sampleId := filename
 	if filename == "" {
 		sampleId = sha256Hex(hexBytecode)
 	}

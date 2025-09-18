@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -51,6 +52,17 @@ func (scan EvmCFG) CreateTask(uid string, bytecode string, filename string) []da
 }
 
 func (scan EvmCFG) ParseOutput(output *datatype.Result) error {
-	// TODO pending
+	dotGraph := string(output.Output)
+	dotGraph = strings.Replace(dotGraph, "Dot file saved to cfg.dot\n", "", 1)
+
+	output.ParsedOutput = &datatype.ScanResult{
+		EdgesDetected: strings.Count(dotGraph, "->"),
+		NodesDetected: strings.Count(dotGraph, "[ label = "),
+		DotGraph:      dotGraph,
+	}
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
+
 	return nil
 }

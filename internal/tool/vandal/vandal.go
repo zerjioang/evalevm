@@ -3,7 +3,9 @@ package vandal
 import (
 	_ "embed"
 	"evalevm/internal/datatype"
+	"evalevm/internal/parser"
 	"fmt"
+	"strings"
 )
 
 var (
@@ -53,5 +55,21 @@ func (scan Vandal) CreateTask(uid string, bytecode string, filename string) []da
 }
 
 func (scan Vandal) ParseOutput(output *datatype.Result) error {
+	dotGraph, err := parser.ExtractBetween(string(output.Output), ">>> graph.dot", "<<<")
+	if err != nil {
+		return fmt.Errorf("failed to parse .dot output: %w", err)
+	}
+	//var asPtrBool = func(b bool) *bool { return &b }
+	output.ParsedOutput = &datatype.ScanResult{
+		Vulnerable:           nil, //asPtrBool(findingsDetected),
+		Error:                nil,
+		EdgesDetected:        strings.Count(dotGraph, " -> "),
+		NodesDetected:        strings.Count(dotGraph, `" [`),
+		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
+		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
+	}
+	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
 	return nil
 }

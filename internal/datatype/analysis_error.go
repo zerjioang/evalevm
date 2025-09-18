@@ -2,6 +2,7 @@ package datatype
 
 import (
 	"evalevm/internal/export"
+	"fmt"
 	"log"
 	"time"
 
@@ -22,11 +23,20 @@ type ScanResult struct {
 	Coverage             *float64 `json:"coverage,omitempty"`
 }
 
-func (s *ScanResult) WithGraph(dot string) {
+func (s *ScanResult) WithGraph(dot string, fileId string, result *Result) error {
 
 	if dot == "" {
-		return
+		return nil
 	}
+
+	task := result.Task
+	filename := fmt.Sprintf("cfg_%s_%s_%s.svg", task.ID().App(), task.TrackerId(), fileId)
+	if err := s.SaveGraph(dot, filename); err != nil {
+		log.Println("failed to save graph: ", err)
+		return err
+	}
+	result.AddFileReference(task.ID().App(), task.TrackerId(), filename)
+
 	s.DotGraph = dot
 	s.CFGCreated = len(dot) > 0
 
@@ -40,6 +50,8 @@ func (s *ScanResult) WithGraph(dot string) {
 		readCoverage := float64((nodesRead-s.OrphanNodesInGraph)*100) / float64(nodesRead)
 		s.Coverage = &readCoverage
 	}
+
+	return nil
 }
 
 func (s *ScanResult) SaveGraph(dot string, filename string) error {

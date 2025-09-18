@@ -125,16 +125,14 @@ func (scan Paper) ParseOutput(output *datatype.Result) error {
 		Coverage:      &dst.Coverage,
 	}
 	if dst.Graphs.Constructor != "" {
-		filename := fmt.Sprintf("cfg_%s_%s_constructor.svg", output.Task.ID().App(), output.Task.TrackerId())
-		output.ParsedOutput.WithGraph(dst.Graphs.Constructor)
-		output.ParsedOutput.SaveGraph(dst.Graphs.Constructor, filename)
-		output.AddFileReference(output.Task.ID().App(), output.Task.TrackerId(), filename)
+		if err := output.ParsedOutput.WithGraph(dst.Graphs.Constructor, "constructor", output); err != nil {
+			return fmt.Errorf("failed to store .dot graph: %w", err)
+		}
 	}
 
-	filename := fmt.Sprintf("cfg_%s_%s_runtime.svg", output.Task.ID().App(), output.Task.TrackerId())
-	output.ParsedOutput.WithGraph(dst.Graphs.Runtime)
-	output.ParsedOutput.SaveGraph(dst.Graphs.Runtime, filename)
-	output.AddFileReference(output.Task.ID().App(), output.Task.TrackerId(), filename)
+	if err := output.ParsedOutput.WithGraph(dst.Graphs.Runtime, "runtime", output); err != nil {
+		return fmt.Errorf("failed to store .dot graph: %w", err)
+	}
 
 	return nil
 }
