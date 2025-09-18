@@ -2,6 +2,7 @@ package vandal
 
 import (
 	"evalevm/internal/datatype"
+	"fmt"
 )
 
 type Vandal struct {
@@ -32,7 +33,9 @@ func (scan Vandal) CreateTask(uid string, bytecode string) []datatype.Task {
 			scan.Options,
 			bytecode,
 			[]string{
-				"run", "--rm", "--cap-add=SYS_ADMIN", "hello-world",
+				// "bin/decompile -n -v -g graph.html examples/dao_hack.hex"
+				"local/vandal", "-c",
+				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python3 bin/decompile -b code.evm %s'`, bytecode),
 			},
 		),
 	}

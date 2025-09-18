@@ -12,8 +12,8 @@ COPY --from=build /installed/bin/evm-cfg /opt/evm-cfg/evm-cfg
 COPY measure.sh measure.sh
 COPY helper.sh helper.sh
 
-RUN chmod +x /opt/measure.sh && \
-    chmod +x /opt/helper.sh
+RUN chmod +x /opt/evm-cfg/measure.sh && \
+    chmod +x /opt/evm-cfg/helper.sh
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \

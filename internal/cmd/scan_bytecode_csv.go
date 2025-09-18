@@ -68,6 +68,11 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 					log.Fatalf("error reading CSV: %v", err)
 				}
 
+				// Skip comments
+				if len(record) == 0 || record[0] == "" || record[0][0] == '#' || (len(record[0]) > 1 && record[0][:2] == "//") {
+					continue
+				}
+
 				row := csvRow{
 					Timestamp: record[0],
 					Address:   record[1],
@@ -84,7 +89,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 						})
 						panic("scan failed")
 					}
-					
+
 					coverage := result.Result().ParsedOutput.Coverage
 					if coverage != nil && *coverage != 100 {
 						fmt.Println("bytecode: ", row.Bytecode, "")

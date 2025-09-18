@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:f8081b61393cc16b2339d377bb523a5646cdd28fc6105612b3893c405d27f730
 
 RUN apt update && \
     apt-get install -y build-essential gcc
@@ -12,8 +12,8 @@ COPY run.py run.py
 COPY measure.sh measure.sh
 COPY helper.sh helper.sh
 
-RUN chmod +x /opt/measure.sh && \
-    chmod +x /opt/helper.sh
+RUN chmod +x /opt/evmole/measure.sh && \
+    chmod +x /opt/evmole/helper.sh
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \

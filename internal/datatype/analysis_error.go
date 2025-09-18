@@ -30,12 +30,12 @@ func (s *ScanResult) WithGraph(dot string) {
 	s.DotGraph = dot
 	s.CFGCreated = len(dot) > 0
 
-	var nodesRead int
-	nodesRead, s.OrphanNodesInGraph, _ = CountOrphanNodes(dot)
-	if s.NodesDetected == 0 {
-		s.NodesDetected = nodesRead
-	}
 	if s.Coverage == nil || *s.Coverage == 0 {
+		var nodesRead int
+		nodesRead, s.OrphanNodesInGraph, _ = CountOrphanNodes(dot)
+		if s.NodesDetected == 0 {
+			s.NodesDetected = nodesRead
+		}
 		// calculate coverage based on .dot file data instead of tool result
 		readCoverage := float64((nodesRead-s.OrphanNodesInGraph)*100) / float64(nodesRead)
 		s.Coverage = &readCoverage

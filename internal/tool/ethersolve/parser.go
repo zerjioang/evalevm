@@ -20,47 +20,39 @@ func parseEthersolveOutput(output *datatype.Result) error {
 	edgesDetected := strings.Count(outStr, " -> ")
 
 	// check if at least one analyzer is executed
-	analyzerDetected := strings.Contains(outStr, "offset,opcode,detection")
 	findingsDetected := false
 	txOriginVulnerable := false
 	reEntrancyVulnerable := false
 	var dotGraph string
-	if analyzerDetected {
-		switch strings.Contains(outStr, noFindings) {
-		case true:
-			// no reentrancy findings nor tx-origin findings
-			findingsDetected = false
-		default:
-			// reentrancy or tx-origin findings. parse them
-			offsetData, err := parseOffsetData(outStr)
-			if err != nil {
-				fmt.Println(err)
-			}
-			for _, datum := range offsetData {
-				// a valid vunerability finding has at least 2 lines: header + at least one finding
-				// if only the header is present, it means no findings were detected
-				// example with findings:
-				// >>> Analysis_re-entrancy
-				// offset,opcode,detection
-				// ...
-				txOriginVulnerable = txOriginVulnerable || (datum.IsTxOrigin && len(datum.Content) > 1)
-				reEntrancyVulnerable = reEntrancyVulnerable || (datum.IsReEntrancy && len(datum.Content) > 1)
-				if datum.IsDotFile {
-					dotGraph = strings.Join(datum.Content, "\n")
-				}
-			}
-			findingsDetected = txOriginVulnerable || reEntrancyVulnerable
+	// reentrancy or tx-origin findings. parse them
+	offsetData, err := parseOffsetData(outStr)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, datum := range offsetData {
+		// a valid vunerability finding has at least 2 lines: header + at least one finding
+		// if only the header is present, it means no findings were detected
+		// example with findings:
+		// >>> Analysis_re-entrancy
+		// offset,opcode,detection
+		// ...
+		txOriginVulnerable = txOriginVulnerable || (datum.IsTxOrigin && len(datum.Content) > 1)
+		reEntrancyVulnerable = reEntrancyVulnerable || (datum.IsReEntrancy && len(datum.Content) > 1)
+		if datum.IsDotFile {
+			dotGraph = strings.Join(datum.Content, "\n")
 		}
 	}
+	findingsDetected = txOriginVulnerable || reEntrancyVulnerable
+	log.Println("findings detected: ", findingsDetected)
 
-	var asPtrBool = func(b bool) *bool { return &b }
+	//var asPtrBool = func(b bool) *bool { return &b }
 	output.ParsedOutput = &datatype.ScanResult{
-		Vulnerable:           asPtrBool(findingsDetected),
+		Vulnerable:           nil, //asPtrBool(findingsDetected),
 		Error:                nil,
 		EdgesDetected:        edgesDetected,
 		NodesDetected:        nodesDetected,
-		TxOriginVulnerable:   asPtrBool(txOriginVulnerable),
-		ReEntrancyVulnerable: asPtrBool(reEntrancyVulnerable),
+		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
+		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
 	}
 	output.ParsedOutput.WithGraph(dotGraph)
 	filename := fmt.Sprintf("cfg_%s_%s.svg", output.Task.ID().App(), output.Task.TrackerId())

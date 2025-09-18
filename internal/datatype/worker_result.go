@@ -63,7 +63,10 @@ func (r *Result) Headers() []string {
 		"memory",
 		"time",
 		"avg_cpu",
-		"scan_result",
+		"vulnerable",
+		"edges",
+		"nodes",
+		"coverage",
 	}
 }
 
@@ -75,30 +78,36 @@ func (r *Result) Rows() []string {
 	if r.Measurements.ExitStatus != 0 {
 		status = boldRed.Sprint("❌")
 	}
-	parsedResult := "pendiente de parsear"
-	if r.Task.Failed() {
-		errMsg := "tool failed"
-		if r.OutputErr != nil {
-			errMsg = string(r.OutputErr)
-			if len(r.OutputErr) > 30 {
-				errMsg = string(r.OutputErr[0:30]) + "..."
-			}
-		}
-		parsedResult = errMsg
-	} else if r.ParsedOutput != nil {
-		parsedResult = r.ParsedOutput.String()
-	} else {
-		parsedResult = "parser not implemented"
+	results := &ScanResult{}
+	if r.ParsedOutput != nil {
+		results = r.ParsedOutput
 	}
 	return []string{
 		boldWhite.Sprint(r.Task.ID().app),
-		boldWhite.Sprint(r.Task.TrackerId()[0:20] + "..."),
+		boldWhite.Sprint(r.Task.TrackerId()[0:40] + "..."),
 		status,
 		beautifyRAM(r.Measurements.MaxRAMKb),
 		fmt.Sprintf("%s (%d ms)", beautifyTimeWithUnits(r.Measurements.ExecTimeMs), r.Measurements.ExecTimeMs),
 		fmt.Sprintf("%.2f %%", r.Measurements.AvgCPUPercent),
-		parsedResult,
+		toBool(results.Vulnerable),
+		fmt.Sprintf("%d", results.EdgesDetected),
+		fmt.Sprintf("%d", results.NodesDetected),
+		fmt.Sprintf("%s %%", toFloat(results.Coverage)),
 	}
+}
+
+func toBool(v *bool) string {
+	if v == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%v", *v)
+}
+
+func toFloat(v *float64) string {
+	if v == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%.2f", *v)
 }
 
 // String returns the string representation of the result
@@ -122,7 +131,7 @@ func (r *Result) AddFileReference(app string, id string, filename string) {
 }
 
 // beautifyRAM converts an integer representing bytes into a human-readable string.
-func beautifyRAM(bytes int64) string {
+func beautifyRAM(kb int64) string {
 	const (
 		KB = 1024
 		MB = KB * 1024
@@ -130,6 +139,8 @@ func beautifyRAM(bytes int64) string {
 		TB = GB * 1024
 	)
 
+	// note: profiler returns the data as kb
+	bytes := kb * 1024
 	switch {
 	case bytes >= TB:
 		return fmt.Sprintf("%.2f TB", float64(bytes)/float64(TB))

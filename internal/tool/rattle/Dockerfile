@@ -3,22 +3,34 @@ FROM python:3.10-slim
 # Avoid interactive prompts during package install
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required system packages
-RUN apt-get update && apt-get install graphviz gcc -y \
-    && apt-get clean \
+# Install required system and build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    build-essential \
+    python3-dev \
+    graphviz \
+    gawk \
+    jq \
+    procps \
+    time \
+    linux-perf \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /opt/rattle
+
+# Copy project files
 COPY . .
 
-RUN chmod +x /opt/rattle/measure.sh && \
-    chmod +x /opt/rattle/helper.sh
+# Ensure helper scripts are executable
+RUN chmod +x /opt/rattle/measure.sh /opt/rattle/helper.sh
 
-RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
+# 2025: patch cbor2 version
+RUN sed -i.bak 's/^cbor2==.*/cbor2>=5.4.6/' requirements.txt
 
-# Install Python dependencies
-RUN pip3 install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (ensure latest build tools)
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Default entrypoint to run the Python CLI
 ENTRYPOINT ["python3", "rattle-cli.py"]
