@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	boldGreen = color.New(color.FgGreen, color.Bold)
-	boldWhite = color.New(color.FgHiWhite, color.Bold)
-	gray      = color.New(color.FgWhite, color.Faint)
-	boldRed   = color.New(color.FgRed, color.Bold)
+	boldGreen  = color.New(color.FgGreen, color.Bold)
+	boldPurple = color.New(color.FgMagenta, color.Bold)
+	boldWhite  = color.New(color.FgHiWhite, color.Bold)
+	gray       = color.New(color.FgWhite, color.Faint)
+	boldRed    = color.New(color.FgRed, color.Bold)
 )
 
 type Measurements struct {
@@ -63,10 +64,9 @@ func (r *Result) Headers() []string {
 		"memory",
 		"time",
 		"avg_cpu",
-		"vulnerable",
 		"edges",
 		"nodes",
-		"coverage",
+		"connected",
 	}
 }
 
@@ -82,14 +82,17 @@ func (r *Result) Rows() []string {
 	if r.ParsedOutput != nil {
 		results = r.ParsedOutput
 	}
+	appName := boldWhite.Sprint(r.Task.ID().app)
+	if r.Task.ID().app == "paper" {
+		appName = boldPurple.Sprint(r.Task.ID().app)
+	}
 	return []string{
-		boldWhite.Sprint(r.Task.ID().app),
+		boldWhite.Sprint(appName),
 		boldWhite.Sprint(r.Task.TrackerId()[0:40] + "..."),
 		status,
 		beautifyRAM(r.Measurements.MaxRAMKb),
 		fmt.Sprintf("%s (%d ms)", beautifyTimeWithUnits(r.Measurements.ExecTimeMs), r.Measurements.ExecTimeMs),
 		fmt.Sprintf("%.2f %%", r.Measurements.AvgCPUPercent),
-		toBool(results.Vulnerable),
 		fmt.Sprintf("%d", results.EdgesDetected),
 		fmt.Sprintf("%d", results.NodesDetected),
 		fmt.Sprintf("%s %%", toFloat(results.Coverage)),
