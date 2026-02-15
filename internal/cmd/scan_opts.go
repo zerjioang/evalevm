@@ -11,6 +11,8 @@ type scanOpts struct {
 	stopOnFail bool   // --stop-on-fail: stop batch processing on first failure
 	tools      string // --tools: comma-separated list of tool names to run
 	csvExport  bool   // --csv: export results as per-tool CSV files
+	runMode    string // --run-mode: execution mode for tools supporting it (e.g. ethersolve)
+	transpose  bool   // --transpose: transpose results table (tools as columns)
 }
 
 // bindScanFlags registers the shared scan flags on the given cobra command.
@@ -20,4 +22,6 @@ func bindScanFlags(cmd *cobra.Command, opts *scanOpts) {
 	cmd.Flags().BoolVar(&opts.stopOnFail, "stop-on-fail", false, "stop batch processing on first analysis failure")
 	cmd.Flags().StringVar(&opts.tools, "tools", "", "comma-separated list of tool names to run (e.g. paper,vandal)")
 	cmd.Flags().BoolVar(&opts.csvExport, "csv", false, "export results as per-tool CSV files (e.g. evalevm_paper.csv)")
+	cmd.Flags().StringVar(&opts.runMode, "run-mode", "any", "execution mode for tools supporting it (runtime, creator, any)")
+	cmd.Flags().BoolVar(&opts.transpose, "transpose", true, "transpose results table (tools as columns)")
 }

@@ -98,7 +98,7 @@ func (m *CFGMetrics) Rows() []string {
 }
 
 // AnalyzeCFG procesa el string DOT y retorna métricas
-func AnalyzeCFG(dotData string) (*CFGMetrics, error) {
+func AnalyzeCFG(dotData string, toolName string) (*CFGMetrics, error) {
 	// 1. Parsear DOT
 	parsedGraph, err := gographviz.ParseString(dotData)
 	if err != nil {
@@ -109,7 +109,8 @@ func AnalyzeCFG(dotData string) (*CFGMetrics, error) {
 		return nil, fmt.Errorf("error al analizar grafo: %v", err)
 	}
 
-	// 2. Construir mapas de adyacencia
+	sanitizeGraph(graph, toolName)
+
 	adj := make(map[string][]string)
 	revAdj := make(map[string][]string)
 	nodes := make(map[string]bool)
@@ -339,4 +340,19 @@ func detectCycles(allNodes map[string]bool, adj map[string][]string) bool {
 		}
 	}
 	return false
+}
+
+// sanitizeGraph removes nodes that are not part of the CFG logic (legends, metadata, etc.)
+func sanitizeGraph(graph *gographviz.Graph, toolName string) {
+	nodeName := ""
+	switch toolName {
+	case "rattle":
+		//
+		_ = graph.RemoveNode(graph.Name, nodeName)
+	case "ethersolve":
+		// Ethersolve: "EXIT BLOCK"
+		_ = graph.RemoveNode(graph.Name, nodeName)
+	case "evm-lisa":
+		_ = graph.RemoveSubGraph(graph.Name, "cluster_legend")
+	}
 }

@@ -4,10 +4,12 @@ import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/tool/bytespector"
 	"evalevm/internal/tool/ethersolve"
+	"evalevm/internal/tool/ethir"
 	"evalevm/internal/tool/evm_cfg"
 	"evalevm/internal/tool/evm_cfg_builder"
 	"evalevm/internal/tool/evmlisa"
 	"evalevm/internal/tool/evmole"
+	"evalevm/internal/tool/octopus"
 	"evalevm/internal/tool/paper"
 	"evalevm/internal/tool/rattle"
 	"evalevm/internal/tool/vandal"
@@ -24,15 +26,13 @@ type Comparator struct {
 	pool         *datatype.WorkerPool
 }
 
-func NewComparator(audit bool) Comparator {
+func NewComparator(audit bool, runMode string) Comparator {
 	analyzerList := []datatype.Analyzer{
-		// tool.NewAcuaricaEVM(),
+		ethir.NewEthIR(),
 		bytespector.NewByteInspector(),
 		// conkas.NewConkas(),
 		// tool.NewDefectChecker(),
-		ethersolve.NewEthersolveCreator(),
-		ethersolve.NewEthersolveRuntime(),
-		ethersolve.NewEthersolveDetection(),
+		ethersolve.NewEthersolve(runMode, audit),
 		evm_cfg.NewEvmCFG(),
 		evm_cfg_builder.NewEvmCFGBuilder(),
 		evmlisa.NewEvmLisa(audit),
@@ -44,7 +44,9 @@ func NewComparator(audit bool) Comparator {
 		// tool.NewMaian(),
 		// tool.NewManticore(),
 		// tool.NewMythril(),
-		// tool.NewOctopus(),
+		// tool.NewMythril(),
+		octopus.NewOctopus(),
+		// tool.NewOsiris(),
 		// tool.NewOsiris(),
 		// tool.NewOyente(),
 		// tool.NewPakala(),
@@ -72,6 +74,11 @@ func NewComparator(audit bool) Comparator {
 func (c *Comparator) FilterByTools(names []string) {
 	if len(names) == 0 {
 		return
+	}
+	for _, n := range names {
+		if n == "all" {
+			return
+		}
 	}
 	allowed := make(map[string]bool, len(names))
 	for _, n := range names {

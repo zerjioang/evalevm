@@ -67,6 +67,7 @@ type BytecodeScanOpts struct {
 	ForceRemoveHexPrefix bool
 	ForceSplitRuntime    bool
 	Audit                bool
+	RunMode              string // "runtime", "creator", "any"
 }
 
 type BytecodeAnalyzer struct {

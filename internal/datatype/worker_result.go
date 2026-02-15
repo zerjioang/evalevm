@@ -58,12 +58,12 @@ type Result struct {
 
 func (r *Result) Headers() []string {
 	baseHeaders := []string{
-		"sota tool",
+		"tool name",
 		"sample id",
 		"status",
-		"max ram",
+		"memory kb",
 		"time",
-		"avg cpu",
+		"cpu",
 	}
 	return append(baseHeaders, (&CFGMetrics{}).Headers()...)
 }
@@ -174,4 +174,17 @@ func beautifyTimeWithUnits(ms int64) string {
 	result += fmt.Sprintf("%ds", seconds)
 
 	return result
+}
+
+func beautifyNumber(val int) string {
+	if val == 0 {
+		return "-"
+	}
+	if val >= 1000000 {
+		return fmt.Sprintf("%.2f M", float64(val)/1000000.0)
+	}
+	if val >= 1000 {
+		return fmt.Sprintf("%.1f K", float64(val)/1000.0)
+	}
+	return fmt.Sprintf("%d", val)
 }

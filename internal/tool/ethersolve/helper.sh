@@ -24,7 +24,7 @@ if [[ "$MODE" == "ethersolve" ]]; then
     fi
 
     # run the measure.sh script inside Docker
-    ./measure.sh java -jar /opt/ethersolve/artifact/EtherSolve.jar $FLAGS "$BYTECODE"
+    ./measure.sh java -jar /opt/ethersolve/UI/build/libs/EtherSolve-1.0-SNAPSHOT.jar $FLAGS "$BYTECODE"
     # Loop through Analysis_* files
     for f in Analysis_*; do
         echo ">>> $f"

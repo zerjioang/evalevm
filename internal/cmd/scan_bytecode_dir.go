@@ -41,7 +41,7 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				return fmt.Errorf("failed to scan directory: %w", err)
 			}
 
-			cmp := engine.NewComparator(opts.audit)
+			cmp := engine.NewComparator(opts.audit, opts.runMode)
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
@@ -93,7 +93,7 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				}
 			}
 
-			if err := render.ScanResults(renderTasks); err != nil {
+			if err := render.ScanResults(renderTasks, opts.transpose); err != nil {
 				return err
 			}
 

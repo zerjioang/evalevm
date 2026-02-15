@@ -72,7 +72,7 @@ func parseOffsetData(data string) (map[string]parsedOffsetFile, error) {
 		case strings.HasPrefix(line, ">>> "):
 			// Finish previous file if any
 			if current != nil {
-				current.Content = writer.Bytes()
+				current.Content = append([]byte(nil), writer.Bytes()...)
 				writer.Reset()
 				results[current.File] = *current
 			}
@@ -84,7 +84,7 @@ func parseOffsetData(data string) (map[string]parsedOffsetFile, error) {
 
 		case strings.HasPrefix(line, "<<<"):
 			if current != nil {
-				current.Content = writer.Bytes()
+				current.Content = append([]byte(nil), writer.Bytes()...)
 				writer.Reset()
 				results[current.File] = *current
 				current = nil

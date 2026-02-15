@@ -3,7 +3,6 @@ package bytespector
 import (
 	_ "embed"
 	"evalevm/internal/datatype"
-	"evalevm/internal/parser"
 	"fmt"
 	"strings"
 )
@@ -22,7 +21,7 @@ var _ datatype.Analyzer = (*ByteSpector)(nil)
 func NewByteInspector() ByteSpector {
 	app := ByteSpector{}
 	app.BytecodeAnalyzer = app.SetupDockerPlatform()
-	app.AppName = "byte-inspector"
+	app.AppName = "bytespector"
 	app.WebsiteUrl = "https://github.com/franck44/evm-dis"
 	app.Desc = `This project provides an EVM bytecode disassembler and Control Flow Graph (CFG) generator. ByteSpector can verify the CFGs by generating a Dafny file that encodes the semantics of the EVM bytecode. The Dafny file can be verified with Dafny. If a CFG is successfully verified, we obtain the following guarantees on the CFG and the bytecode`
 	app.Options = datatype.BytecodeScanOpts{
@@ -30,7 +29,7 @@ func NewByteInspector() ByteSpector {
 		ForceSplitRuntime:    false,
 	}
 	app.Deprecated = false
-	app.LastCommit = "7 months ago"
+	app.LastCommit = "e years ago"
 	app.Language = "dafny"
 	app.Dockerfile = byteInspectorDockerfile
 	app.Platform = "linux/amd64"
@@ -50,7 +49,7 @@ func (scan ByteSpector) CreateTask(uid string, bytecode string, filename string)
 			[]string{
 				"--platform",
 				"linux/amd64",
-				"local/byte-inspector",
+				"local/bytespector",
 				"-c",
 				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'cd /tacas25/evm-dis/ && ./makeCFG.sh code.evm && cat build/dot/code.evm/code.evm.dot'`, bytecode),
 			},
@@ -59,25 +58,23 @@ func (scan ByteSpector) CreateTask(uid string, bytecode string, filename string)
 }
 
 func (scan ByteSpector) ParseOutput(output *datatype.Result) error {
-	dotGraph, err := parser.ExtractBetween(string(output.Output), "*/", "//----------------- Minimised CFG -------------------")
-	if err != nil {
-		return fmt.Errorf("failed to parse output: %w", err)
+	// The output is likely the raw DOT file content + maybe some logs.
+	outStr := string(output.Output)
+	start := strings.Index(outStr, "digraph")
+	if start == -1 {
+		return fmt.Errorf("failed to parse output: 'digraph' not found in output")
 	}
-	nodesDetected := strings.Count(dotGraph, " [label=")
-
-	// count how many edges are defined in the CFG
-	// example: 119 -> 118 [label="119 -> 118\l" ];
-	edgesDetected := strings.Count(dotGraph, " -> ")
-
-	//var asPtrBool = func(b bool) *bool { return &b }
-	output.ParsedOutput = &datatype.ScanResult{
-		Vulnerable:           nil, //asPtrBool(findingsDetected),
-		Error:                nil,
-		EdgesDetected:        edgesDetected,
-		NodesDetected:        nodesDetected,
-		TxOriginVulnerable:   nil, //asPtrBool(txOriginVulnerable),
-		ReEntrancyVulnerable: nil, //asPtrBool(reEntrancyVulnerable),
+	// Find the last closing brace
+	end := strings.LastIndex(outStr, "}")
+	if end == -1 || end < start {
+		return fmt.Errorf("failed to parse output: closing brace '}' not found after 'digraph'")
 	}
+	dotGraph := outStr[start : end+1]
+
+	// fix bugs
+	dotGraph = strings.ReplaceAll(dotGraph, "ranking=", "rankdir=")
+
+	output.ParsedOutput = &datatype.ScanResult{}
 	if err := output.ParsedOutput.WithGraph(dotGraph, "", output); err != nil {
 		return fmt.Errorf("failed to store .dot graph: %w", err)
 	}

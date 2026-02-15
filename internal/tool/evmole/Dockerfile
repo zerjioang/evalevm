@@ -1,7 +1,10 @@
-FROM python:3.12-slim@sha256:f8081b61393cc16b2339d377bb523a5646cdd28fc6105612b3893c405d27f730
+FROM python:3.10-slim
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && \
-    apt-get install -y build-essential gcc
+    apt-get install -y build-essential gcc cargo pkg-config libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/evmole
 

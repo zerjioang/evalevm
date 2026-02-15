@@ -12,5 +12,12 @@ RUN chmod +x /tacas25/evm-dis/measure.sh && \
 RUN apt-get update && \
     apt-get install -y gawk jq procps time linux-tools-generic linux-tools-common
 
-# patch perf utility
-RUN rm /usr/bin/perf && ln -s /usr/lib/linux-tools/6.8.0-83-generic/perf /usr/bin/perf
+# patch perf utility - dynamically find the correct directory and overwrite wrapper
+RUN REAL_PERF=$(find /usr/lib -name perf -executable -type f | grep linux-tools | head -n 1) && \
+    if [ -n "$REAL_PERF" ]; then \
+    mv "$REAL_PERF" /usr/bin/perf.real && \
+    printf "#!/bin/bash\n/lib64/ld-linux-x86-64.so.2 /usr/bin/perf.real \"\$@\"\n" > /usr/bin/perf && \
+    chmod +x /usr/bin/perf; \
+    else \
+    echo "Could not find native perf binary" && exit 1; \
+    fi

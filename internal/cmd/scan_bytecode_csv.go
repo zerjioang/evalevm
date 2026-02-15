@@ -42,7 +42,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 				log.Printf("csv tool benchmark scan completed in %s", elapsed)
 			}()
 
-			cmp := engine.NewComparator(opts.audit)
+			cmp := engine.NewComparator(opts.audit, opts.runMode)
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
@@ -116,7 +116,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 					}
 				}
 
-				if err := render.ScanResults(taskset); err != nil {
+				if err := render.ScanResults(taskset, opts.transpose); err != nil {
 					return err
 				}
 			}

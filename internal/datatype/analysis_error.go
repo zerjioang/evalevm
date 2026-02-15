@@ -42,11 +42,13 @@ func (s *ScanResult) WithGraph(dot string, fileId string, result *Result) error 
 	s.CFGCreated = len(dot) > 0
 
 	// Calculate detailed metrics
-	if metrics, err := AnalyzeCFG(dot); err == nil {
+	if metrics, err := AnalyzeCFG(dot, result.Task.ID().App()); err == nil {
 		s.Metrics = metrics
 		// Update detected nodes/edges if not already set or override if analysis is more accurate
 		s.NodesDetected = metrics.NodeCount
 		s.EdgesDetected = metrics.EdgeCount
+	} else {
+		log.Printf("AnalyzeCFG failed: %v", err)
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-FROM paper-algorithm:latest
+FROM docker.io/library/paper-algorithm:latest
 
 WORKDIR /opt
 

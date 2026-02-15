@@ -28,8 +28,8 @@ func NewEvmCFG() EvmCFG {
 		ForceRemoveHexPrefix: false,
 		ForceSplitRuntime:    false,
 	}
-	app.Deprecated = true
-	app.LastCommit = "5 months ago"
+	app.Deprecated = false
+	app.LastCommit = "1 year ago"
 	app.Language = "rust"
 	app.Dockerfile = evmCFGDockerfile
 	app.SupportsVulnerabilities = false

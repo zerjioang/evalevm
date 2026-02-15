@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -39,15 +40,15 @@ func main() {
 		// Cancel the context
 		cancel()
 
-		// Wait for the command to finish or timeout
+		// Wait for the command to finish or a hard timeout
 		select {
 		case err := <-errChan:
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error during shutdown: %v\n", err)
 				os.Exit(1)
 			}
-		case <-ctx.Done():
-			fmt.Fprintln(os.Stderr, "Shutdown completed")
+		case <-time.After(10 * time.Second):
+			fmt.Fprintln(os.Stderr, "Shutdown timed out, forcing exit")
 			os.Exit(1)
 		}
 

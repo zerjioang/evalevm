@@ -32,7 +32,7 @@ func ScanBytecodeCmd() *cobra.Command {
 				log.Printf("tool benchmark completed in %s", elapsed)
 			}()
 
-			cmp := engine.NewComparator(opts.audit)
+			cmp := engine.NewComparator(opts.audit, opts.runMode)
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
@@ -42,27 +42,29 @@ func ScanBytecodeCmd() *cobra.Command {
 
 			log.Println("all tools evaluated and benchmark completed for the evm bytecode sample. exporting results")
 
-			if err := render.ScanResults(taskset); err != nil {
+			if err := render.ScanResults(taskset, opts.transpose); err != nil {
 				return err
 			}
 
-			// render success results
-			for _, result := range taskset {
-				if !result.Failed() {
-					_ = render.ScanSuccess(datatype.ScanSuccess{
-						Name:   result.ID().App(),
-						Output: result.Result().ParsedOutput.String(),
-					})
+			if false {
+				// render success results
+				for _, result := range taskset {
+					if !result.Failed() {
+						_ = render.ScanSuccess(datatype.ScanSuccess{
+							Name:   result.ID().App(),
+							Output: result.Result().ParsedOutput.String(),
+						})
+					}
 				}
-			}
 
-			// render error results
-			for _, result := range taskset {
-				if result.Failed() {
-					_ = render.ScanError(datatype.ScanErrorDetails{
-						Name:    result.ID().App(),
-						Message: string(result.Result().OutputErr),
-					})
+				// render error results
+				for _, result := range taskset {
+					if result.Failed() {
+						_ = render.ScanError(datatype.ScanErrorDetails{
+							Name:    result.ID().App(),
+							Message: string(result.Result().OutputErr),
+						})
+					}
 				}
 			}
 
@@ -83,6 +85,12 @@ func ScanBytecodeCmd() *cobra.Command {
 				if err := exportTaskSetCSV(taskset); err != nil {
 					return fmt.Errorf("CSV export failed: %w", err)
 				}
+			}
+
+			// Print helper command to open generated SVGs
+			if len(taskset) > 0 {
+				id := taskset[0].Result().Task.TrackerId()
+				fmt.Printf("\nTo view generated graphs:\nopen output/%s/*.svg\n", id)
 			}
 
 			return nil

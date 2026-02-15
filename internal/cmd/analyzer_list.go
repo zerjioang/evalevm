@@ -12,7 +12,7 @@ func AnalyzerListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "list analyzers",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmp := engine.NewComparator(false)
+			cmp := engine.NewComparator(false, "")
 			render.RenderAnalyzers(cmp.Analyzers())
 		},
 	}

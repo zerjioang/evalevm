@@ -81,9 +81,9 @@ func (s *DockerTask) Parse() {
 	idxStart := strings.LastIndex(output, "evalevm_perf_metrics_start")
 	idxEnd := strings.LastIndex(output, "evalevm_perf_metrics_end")
 	if idxStart != -1 && idxEnd != -1 && idxEnd > idxStart {
-		measureJsonStr := s.result.Output[idxStart+len("evalevm_perf_metrics_start") : idxEnd]
-		if err := json.Unmarshal(measureJsonStr, &s.result.Measurements); err != nil {
-			log.Println("failed to parse measure.sh output: " + err.Error() + ". Probably caused due to missing output")
+		measureJsonStr := strings.TrimSpace(string(s.result.Output[idxStart+len("evalevm_perf_metrics_start") : idxEnd]))
+		if err := json.Unmarshal([]byte(measureJsonStr), &s.result.Measurements); err != nil {
+			log.Println("failed to parse measure.sh output: " + err.Error() + ". JSON: " + measureJsonStr)
 		}
 		s.result.Output = removeBytes(s.result.Output, idxStart, idxEnd+len("evalevm_perf_metrics_end"))
 	} else {

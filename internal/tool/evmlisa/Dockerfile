@@ -1,5 +1,5 @@
 # Use a base image with JDK 11
-FROM openjdk:11-jdk-slim
+FROM eclipse-temurin:11-jdk-jammy
 
 # Specify the version of Gradle to install
 ARG GRADLE_VERSION=8.0
@@ -25,9 +25,9 @@ COPY . .
 RUN chmod +x /opt/evmlisa/measure.sh && \
     chmod +x /opt/evmlisa/helper.sh
 
-RUN apt-get update && apt-get install -y gawk jq procps time linux-perf
+RUN apt-get update && apt-get install -y gawk jq procps time linux-tools-generic linux-tools-common
 # patch perf utility
-RUN rm /usr/bin/perf && ln -s /usr/bin/perf_5.10 /usr/bin/perf
+RUN rm /usr/bin/perf && ln -s /usr/lib/linux-tools/*/perf /usr/bin/perf
 
 # Build the project with Gradle
 RUN gradle assemble

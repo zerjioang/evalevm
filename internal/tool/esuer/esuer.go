@@ -4,14 +4,14 @@ import (
 	"evalevm/internal/datatype"
 )
 
-type AcuaricaEVM struct {
+type Eusuer struct {
 	datatype.BytecodeAnalyzer
 }
 
-var _ datatype.Analyzer = (*AcuaricaEVM)(nil)
+var _ datatype.Analyzer = (*Eusuer)(nil)
 
-func NewAcuaricaEVM() AcuaricaEVM {
-	app := AcuaricaEVM{}
+func NewEusuer() Eusuer {
+	app := Eusuer{}
 	app.AppName = "acuarica-evm"
 	app.WebsiteUrl = "https://github.com/acuarica/evm"
 	app.Desc = `A Symbolic Ethereum Virtual Machine (EVM) interpreter and decompiler, along with several other utils for programmatically extracting information from bytecode.`
@@ -25,7 +25,7 @@ func NewAcuaricaEVM() AcuaricaEVM {
 	return app
 }
 
-func (scan AcuaricaEVM) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
+func (scan Eusuer) CreateTask(uid string, bytecode string, filename string) []datatype.Task {
 	return []datatype.Task{
 		datatype.NewDockerTask(
 			scan.CreateTaskId(uid),
@@ -40,6 +40,6 @@ func (scan AcuaricaEVM) CreateTask(uid string, bytecode string, filename string)
 	}
 }
 
-func (scan AcuaricaEVM) ParseOutput(output *datatype.Result) error {
+func (scan Eusuer) ParseOutput(output *datatype.Result) error {
 	return nil
 }
