@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -16,11 +17,8 @@ import (
 
 func ScanBytecodeDirCmd() *cobra.Command {
 
-	type scanBytecodeDirFlag struct {
-		path string
-	}
-
-	var flags scanBytecodeDirFlag
+	var opts scanOpts
+	var path string
 
 	scanCmd := &cobra.Command{
 		Use:     "dir",
@@ -28,7 +26,7 @@ func ScanBytecodeDirCmd() *cobra.Command {
 		Short:   "scan bytecodes in directory",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if flags.path == "" {
+			if path == "" {
 				return fmt.Errorf("path not provided")
 			}
 
@@ -38,15 +36,18 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				log.Printf("dir tool benchmark scan completed in %s", elapsed)
 			}()
 
-			files, err := scanDirRecursive(flags.path)
+			files, err := scanDirRecursive(path)
 			if err != nil {
 				return fmt.Errorf("failed to scan directory: %w", err)
 			}
 
-			cmp := engine.NewComparator()
+			cmp := engine.NewComparator(opts.audit)
+			if opts.tools != "" {
+				cmp.FilterByTools(strings.Split(opts.tools, ","))
+			}
 			cmp.Start()
 
-			var alltasks []datatype.TaskSet
+			var renderTasks datatype.TaskSet
 			for i, file := range files {
 				log.Printf("submitting task %d/%d: %s", i+1, len(files), file)
 				content, err := os.ReadFile(file)
@@ -55,30 +56,39 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				}
 				filebase := filepath.Base(file)
 				taskset := cmp.SubmitAndWait(string(content), filebase)
-				alltasks = append(alltasks, taskset)
-			}
 
-			log.Println("all task completed. collecting results")
-			var renderTasks datatype.TaskSet
-			for _, taskset := range alltasks {
-				// also render the scanners with success
+				hasFailed := false
 				for _, result := range taskset {
-					if !result.Failed() {
-						_ = render.ScanSuccess(datatype.ScanSuccess{
-							Name:   result.ID().App(),
-							Output: result.Result().ParsedOutput.String(),
-						})
-					}
 					renderTasks = append(renderTasks, result)
-				}
-
-				// also render the scanners with errors
-				for _, result := range taskset {
 					if result.Failed() {
 						_ = render.ScanError(datatype.ScanErrorDetails{
 							Name:    result.ID().App(),
 							Message: string(result.Result().OutputErr),
 						})
+						hasFailed = true
+					} else {
+						_ = render.ScanSuccess(datatype.ScanSuccess{
+							Name:   result.ID().App(),
+							Output: result.Result().ParsedOutput.String(),
+						})
+					}
+				}
+
+				// --stop-on-fail: abort batch on first failure
+				if opts.stopOnFail && hasFailed {
+					log.Printf("stopping on failure for file: %s", file)
+					break
+				}
+
+				// --coverage: abort if coverage < 100%
+				if opts.coverage {
+					for _, result := range taskset {
+						if !result.Failed() && result.Result().ParsedOutput != nil {
+							cov := result.Result().ParsedOutput.Coverage
+							if cov != nil && *cov < 100 {
+								return fmt.Errorf("coverage check failed: %s reported %.2f%% coverage (< 100%%)", result.ID().App(), *cov)
+							}
+						}
 					}
 				}
 			}
@@ -87,11 +97,19 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				return err
 			}
 
+			// export CSV if requested
+			if opts.csvExport {
+				if err := exportTaskSetCSV(renderTasks); err != nil {
+					return fmt.Errorf("CSV export failed: %w", err)
+				}
+			}
+
 			return nil
 		},
 	}
 
-	scanCmd.Flags().StringVarP(&flags.path, "dataset", "d", "", "dataset path")
+	scanCmd.Flags().StringVarP(&path, "dataset", "d", "", "dataset path")
+	bindScanFlags(scanCmd, &opts)
 	return scanCmd
 }
 

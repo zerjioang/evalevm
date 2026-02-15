@@ -2,18 +2,21 @@ package cmd
 
 import (
 	"encoding/csv"
+	"errors"
 	"evalevm/internal/datatype"
 	"evalevm/internal/engine"
 	"evalevm/internal/render"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
 
-// Row represents one CSV row
+// csvRow represents one CSV row
 type csvRow struct {
 	Timestamp string
 	Address   string
@@ -21,33 +24,33 @@ type csvRow struct {
 }
 
 func ScanBytecodeCSVCmd() *cobra.Command {
-	type scanBytecodeCSVFlag struct {
-		path string
-	}
-
-	var flags scanBytecodeCSVFlag
+	var opts scanOpts
+	var path string
 
 	scanCmd := &cobra.Command{
 		Use:   "csv",
 		Short: "scan bytecodes from downloaded local CSV",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if flags.path == "" {
+			if path == "" {
 				return fmt.Errorf("path not provided")
 			}
 
 			start := time.Now()
 			defer func() {
 				elapsed := time.Since(start)
-				log.Printf("dir tool benchmark scan completed in %s", elapsed)
+				log.Printf("csv tool benchmark scan completed in %s", elapsed)
 			}()
 
-			cmp := engine.NewPaperOnlyComparator()
+			cmp := engine.NewComparator(opts.audit)
+			if opts.tools != "" {
+				cmp.FilterByTools(strings.Split(opts.tools, ","))
+			}
 			cmp.Start()
 
-			file, err := os.Open(flags.path)
+			file, err := os.Open(path)
 			if err != nil {
-				log.Fatalf("failed to open CSV: %v", err)
+				return fmt.Errorf("failed to open CSV: %w", err)
 			}
 			defer file.Close()
 
@@ -56,16 +59,18 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 			// Read header first
 			header, err := reader.Read()
 			if err != nil {
-				log.Fatalf("failed to read header: %v", err)
+				return fmt.Errorf("failed to read header: %w", err)
 			}
-			fmt.Println("CSV header:", header)
+			log.Println("CSV header:", header)
+
+			var allTasks datatype.TaskSet
 			for {
 				record, err := reader.Read()
 				if err != nil {
-					if err.Error() == "EOF" {
+					if errors.Is(err, io.EOF) {
 						break
 					}
-					log.Fatalf("error reading CSV: %v", err)
+					return fmt.Errorf("error reading CSV: %w", err)
 				}
 
 				// Skip comments
@@ -80,30 +85,46 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 				}
 				log.Printf("submitting task: %s\n", row.Bytecode)
 				taskset := cmp.SubmitAndWait(row.Bytecode, row.Address)
-				forceFail := false
+
+				hasFailed := false
 				for _, result := range taskset {
+					allTasks = append(allTasks, result)
 					if result.Failed() {
 						_ = render.ScanError(datatype.ScanErrorDetails{
 							Name:    result.ID().App(),
 							Message: string(result.Result().OutputErr),
 						})
-						panic("scan failed")
+						hasFailed = true
 					}
+				}
 
-					coverage := result.Result().ParsedOutput.Coverage
-					if coverage != nil && *coverage != 100 {
-						fmt.Println("bytecode: ", row.Bytecode, "")
-						fmt.Println("coverage: ", *coverage, "")
-						forceFail = true
+				// --stop-on-fail: abort batch on first failure
+				if opts.stopOnFail && hasFailed {
+					return fmt.Errorf("scan failed for contract %s, stopping", row.Address)
+				}
+
+				// --coverage: abort if coverage < 100%
+				if opts.coverage {
+					for _, result := range taskset {
+						if !result.Failed() && result.Result().ParsedOutput != nil {
+							cov := result.Result().ParsedOutput.Coverage
+							if cov != nil && *cov < 100 {
+								return fmt.Errorf("coverage check failed: %s reported %.2f%% coverage (< 100%%) for contract %s",
+									result.ID().App(), *cov, row.Address)
+							}
+						}
 					}
 				}
 
 				if err := render.ScanResults(taskset); err != nil {
 					return err
 				}
+			}
 
-				if forceFail {
-					panic("coverage not 100. debug this contract manually")
+			// export CSV if requested
+			if opts.csvExport {
+				if err := exportTaskSetCSV(allTasks); err != nil {
+					return fmt.Errorf("CSV export failed: %w", err)
 				}
 			}
 
@@ -111,6 +132,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 		},
 	}
 
-	scanCmd.Flags().StringVarP(&flags.path, "dataset", "d", "", "csv dataset path")
+	scanCmd.Flags().StringVarP(&path, "dataset", "d", "", "csv dataset path")
+	bindScanFlags(scanCmd, &opts)
 	return scanCmd
 }

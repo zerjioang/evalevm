@@ -64,7 +64,7 @@ func ProcessCSV(path string, limit uint, minsize int) error {
 	processed := uint(0)
 	log.Println("reading rows")
 	for {
-		fmt.Println(processed + 1)
+		log.Printf("processing row %d", processed+1)
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
@@ -78,15 +78,15 @@ func ProcessCSV(path string, limit uint, minsize int) error {
 
 		wg.Add(1)
 		rows <- record
+		processed++
 		if limit != 0 && processed >= limit {
 			break
 		}
-		processed++
 	}
 
-	// Wait and cleanup
-	wg.Wait()
+	// Close channel first so workers can drain and exit, then wait
 	close(rows)
+	wg.Wait()
 	return nil
 }
 
@@ -99,8 +99,8 @@ func processRow(row *CSVRow) {
 		padUint32(len(row.Bytecode)),
 		row.Address,
 	)
-	if err := cli.Run(context.Background(), name, row.Bytecode, time.Now()); err != nil {
-		log.Fatal(err)
+	if err := cli.Run(context.Background(), name, row.Bytecode, false, time.Now()); err != nil {
+		log.Printf("error processing contract [%s]: %v", row.Address, err)
 	}
 }
 

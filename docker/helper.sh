@@ -28,8 +28,11 @@ elif [[ "$MODE" == "ethersolve_runtime" ]]; then
         echo "<<<"
     done
 elif [[ "$MODE" == "evmlisa" ]]; then
+    # Shift the first two arguments (MODE and BYTECODE) to get the rest
+    shift 2
+    EXTRA_ARGS="$@"
     # run the measure.sh script inside Docker
-    ./measure.sh java -jar /opt/evmlisa/build/libs/evm-lisa-all.jar --show-all-instructions-in-cfg --checker-all --paper-stats --bytecode "$BYTECODE"
+    ./measure.sh java -jar /opt/evmlisa/build/libs/evm-lisa-all.jar --show-all-instructions-in-cfg --paper-stats --bytecode "$BYTECODE" $EXTRA_ARGS
     for f in execution/results/contract-*/**; do
       if [ -f "$f" ]; then
         echo ">>> $f"

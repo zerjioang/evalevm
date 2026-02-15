@@ -27,7 +27,7 @@ func parseEthersolveOutput(output *datatype.Result) error {
 	// reentrancy or tx-origin findings. parse them
 	offsetData, err := parseOffsetData(outStr)
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("failed to parse offset data: %v", err)
 	}
 	for _, datum := range offsetData {
 		// a valid vunerability finding has at least 2 lines: header + at least one finding
@@ -84,7 +84,6 @@ func parseOffsetData(data string) ([]parsedOffsetFile, error) {
 				results = append(results, *current)
 			}
 			filename := strings.TrimSpace(strings.TrimPrefix(line, ">>> "))
-			fmt.Println("filename: ", filename)
 			current = &parsedOffsetFile{
 				File:         filename,
 				IsTxOrigin:   strings.Contains(filename, "tx-origin"),
@@ -100,7 +99,6 @@ func parseOffsetData(data string) ([]parsedOffsetFile, error) {
 
 		default:
 			if current != nil && len(strings.TrimSpace(line)) > 0 {
-				fmt.Println("adding line to file: ", current.File, line)
 				current.Content = append(current.Content, line)
 			}
 		}

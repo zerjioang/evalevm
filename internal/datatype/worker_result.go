@@ -12,8 +12,8 @@ var (
 	boldGreen  = color.New(color.FgGreen, color.Bold)
 	boldPurple = color.New(color.FgMagenta, color.Bold)
 	boldWhite  = color.New(color.FgHiWhite, color.Bold)
-	gray       = color.New(color.FgWhite, color.Faint)
 	boldRed    = color.New(color.FgRed, color.Bold)
+	boldYellow = color.New(color.FgYellow, color.Bold)
 )
 
 type Measurements struct {
@@ -57,17 +57,15 @@ type Result struct {
 }
 
 func (r *Result) Headers() []string {
-	return []string{
+	baseHeaders := []string{
 		"sota tool",
 		"sample id",
 		"status",
 		"max ram",
 		"time",
 		"avg cpu",
-		"nodes",
-		"edges",
-		"connected",
 	}
+	return append(baseHeaders, (&CFGMetrics{}).Headers()...)
 }
 
 func (r *Result) Rows() []string {
@@ -78,6 +76,9 @@ func (r *Result) Rows() []string {
 	if r.Measurements.ExitStatus != 0 {
 		status = boldRed.Sprint("❌")
 	}
+	if r.Timeout {
+		status = boldYellow.Sprint("⏱")
+	}
 	results := &ScanResult{}
 	if r.ParsedOutput != nil {
 		results = r.ParsedOutput
@@ -86,31 +87,29 @@ func (r *Result) Rows() []string {
 	if r.Task.ID().app == "paper" {
 		appName = boldPurple.Sprint(r.Task.ID().app)
 	}
-	return []string{
+	sampleID := r.Task.TrackerId()
+	if len(sampleID) > 16 {
+		sampleID = sampleID[:16]
+	}
+	baseRows := []string{
 		boldWhite.Sprint(appName),
-		boldWhite.Sprint(r.Task.TrackerId()),
+		boldWhite.Sprint(sampleID),
 		status,
 		beautifyRAM(r.Measurements.MaxRAMKb),
 		fmt.Sprintf("%s (%d ms)", beautifyTimeWithUnits(r.Measurements.ExecTimeMs), r.Measurements.ExecTimeMs),
 		fmt.Sprintf("%.2f %%", r.Measurements.AvgCPUPercent),
-		fmt.Sprintf("%d", results.NodesDetected),
-		fmt.Sprintf("%d", results.EdgesDetected),
-		fmt.Sprintf("%s %%", toFloat(results.Coverage)),
 	}
-}
 
-func toBool(v *bool) string {
-	if v == nil {
-		return "-"
+	if results.Metrics != nil {
+		return append(baseRows, results.Metrics.Rows()...)
+	} else {
+		// Fill with empty strings if no metrics (should match header count)
+		emptyMetrics := make([]string, len((&CFGMetrics{}).Headers()))
+		for i := range emptyMetrics {
+			emptyMetrics[i] = "-"
+		}
+		return append(baseRows, emptyMetrics...)
 	}
-	return fmt.Sprintf("%v", *v)
-}
-
-func toFloat(v *float64) string {
-	if v == nil {
-		return "-"
-	}
-	return fmt.Sprintf("%.2f", *v)
 }
 
 // String returns the string representation of the result

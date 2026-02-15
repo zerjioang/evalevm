@@ -36,6 +36,8 @@ func NewHoneyBadger() HoneyBadger {
 	app.Dockerfile = honeyBadgerDockerfile
 	app.PaperURL = "https://arxiv.org/pdf/1902.06976"
 	app.Platform = "linux/amd64"
+	app.SupportsVulnerabilities = true
+	app.SupportsCFG = true
 	return app
 }
 
@@ -57,13 +59,17 @@ func (scan HoneyBadger) CreateTask(uid string, bytecode string, filename string)
 }
 
 func (scan HoneyBadger) ParseOutput(output *datatype.Result) error {
-	_, err := scan.parse(output.Output)
+	res, err := scan.parse(string(output.Output))
 	if err != nil {
-		return &datatype.ScanResult{
+		output.ParsedOutput = &datatype.ScanResult{
 			Error: err,
 		}
+		return nil
 	}
-	return &datatype.ScanResult{}
+	output.ParsedOutput = &datatype.ScanResult{
+		Coverage: &res.Coverage,
+	}
+	return nil
 }
 
 type SymExecResult struct {

@@ -45,8 +45,10 @@ type commonAnalyzerFields struct {
 	PaperURL   string
 	Creator    string
 	// docker platform: linux/amd64 or "linux/arm64
-	Platform string
-	WorkDir  string
+	Platform                string
+	WorkDir                 string
+	SupportsVulnerabilities bool
+	SupportsCFG             bool
 }
 
 func (r commonAnalyzerFields) Name() string {
@@ -64,6 +66,7 @@ func (r commonAnalyzerFields) Description() string {
 type BytecodeScanOpts struct {
 	ForceRemoveHexPrefix bool
 	ForceSplitRuntime    bool
+	Audit                bool
 }
 
 type BytecodeAnalyzer struct {
@@ -78,12 +81,18 @@ func (scan BytecodeAnalyzer) SetupDockerPlatform() BytecodeAnalyzer {
 }
 
 func (scan BytecodeAnalyzer) Headers() []string {
-	return []string{"name", "url", "deprecated", "last commit", "language"}
+	return []string{"name", "url", "deprecated", "last commit", "language", "Vulns", "CFG"}
 }
 
 func (scan BytecodeAnalyzer) Rows() []string {
 	return []string{
-		scan.Name(), scan.URL(), fmt.Sprintf("%v", scan.Deprecated), scan.LastCommit, scan.Language,
+		scan.Name(),
+		scan.URL(),
+		fmt.Sprintf("%v", scan.Deprecated),
+		scan.LastCommit,
+		scan.Language,
+		fmt.Sprintf("%v", scan.SupportsVulnerabilities),
+		fmt.Sprintf("%v", scan.SupportsCFG),
 	}
 }
 
@@ -96,19 +105,23 @@ func (scan BytecodeAnalyzer) CreateTaskId(uid string) TaskId {
 }
 
 func (scan BytecodeAnalyzer) DockerfilePath() (string, error) {
-	// Create scan temporary file in the default temp directory
+	// Create a temporary Dockerfile from the embedded content.
+	// Note: the caller (Builder.Build) is responsible for cleanup after docker build.
 	tmpFile, err := os.CreateTemp("", fmt.Sprintf("%s-*.Dockerfile", scan.AppName))
 	if err != nil {
 		return "", err
 	}
 	defer tmpFile.Close()
 
-	// Write "hello" into the file
 	if _, err := tmpFile.WriteString(scan.Dockerfile); err != nil {
 		return "", err
 	}
 
-	// Return the full path to the temporary file
+	// Ensure content is flushed to disk before the path is used by docker build
+	if err := tmpFile.Sync(); err != nil {
+		return "", err
+	}
+
 	return tmpFile.Name(), nil
 }
 

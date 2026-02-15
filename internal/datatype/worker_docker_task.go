@@ -72,7 +72,7 @@ func (s *DockerTask) WithResultParser(parser ResultParser) {
 }
 
 func (s *DockerTask) Failed() bool {
-	return s.result.Error != nil || s.result.Measurements.ExitStatus != 0
+	return s.result.Error != nil || s.result.Timeout || s.result.Measurements.ExitStatus != 0
 }
 
 func (s *DockerTask) Parse() {
@@ -82,7 +82,7 @@ func (s *DockerTask) Parse() {
 	idxEnd := strings.LastIndex(output, "evalevm_perf_metrics_end")
 	if idxStart != -1 && idxEnd != -1 && idxEnd > idxStart {
 		measureJsonStr := s.result.Output[idxStart+len("evalevm_perf_metrics_start") : idxEnd]
-		if err := json.Unmarshal([]byte(measureJsonStr), &s.result.Measurements); err != nil {
+		if err := json.Unmarshal(measureJsonStr, &s.result.Measurements); err != nil {
 			log.Println("failed to parse measure.sh output: " + err.Error() + ". Probably caused due to missing output")
 		}
 		s.result.Output = removeBytes(s.result.Output, idxStart, idxEnd+len("evalevm_perf_metrics_end"))
@@ -131,17 +131,15 @@ func (s *DockerTask) MarshalJSON() ([]byte, error) {
 		Debug       bool             `json:"debug"`
 	}
 
-	// avoid recursion in JSON marshalling
-	result := s.result
-	s.result = nil
-	defer func() { s.result = result }()
+	// Note: we intentionally pass nil for Result to avoid circular reference.
+	// Do NOT mutate s.result here — that would cause a data race.
 	return jsoniter.Marshal(&Alias{
 		ID:          s.id,
 		SampleID:    s.sampleId,
 		Opts:        s.opts,
 		HexBytecode: s.hexBytecode,
 		Cmd:         s.cmd,
-		Result:      s.result,
+		Result:      nil,
 		Debug:       s.debug,
 	})
 }

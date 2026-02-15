@@ -24,7 +24,7 @@ func AnalyzerBuildCmd() *cobra.Command {
 				return errors.New("tools path not provided")
 			}
 
-			cmp := engine.NewComparator()
+			cmp := engine.NewComparator(false)
 			tools := cmp.Analyzers()
 			for _, analyzer := range tools {
 				var b engine.Builder

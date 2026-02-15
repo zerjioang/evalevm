@@ -32,6 +32,8 @@ func NewEvmCFGBuilder() EvmCFGBuilder {
 	app.LastCommit = "4 years ago"
 	app.Language = "python"
 	app.Dockerfile = evmCfgBuilderDockerfile
+	app.SupportsVulnerabilities = false
+	app.SupportsCFG = true
 	return app
 }
 

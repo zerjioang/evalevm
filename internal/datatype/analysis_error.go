@@ -11,16 +11,17 @@ import (
 
 type ScanResult struct {
 	// Vulnerable flag set to true if the analysis found at least one vulnerability
-	Vulnerable           *bool    `json:"vulnerable,omitempty"`
-	Error                error    `json:"error,omitempty"`
-	EdgesDetected        int      `json:"edges,omitempty"`
-	NodesDetected        int      `json:"nodes,omitempty"`
-	OrphanNodesInGraph   int      `json:"orphan_nodes,omitempty"`
-	TxOriginVulnerable   *bool    `json:"tx_origin_vulnerable,omitempty"`
-	ReEntrancyVulnerable *bool    `json:"re_entrancy_vulnerable,omitempty"`
-	CFGCreated           bool     `json:"cfg_created,omitempty"`
-	DotGraph             string   `json:"dot_graph,omitempty"`
-	Coverage             *float64 `json:"coverage,omitempty"`
+	Vulnerable           *bool       `json:"vulnerable,omitempty"`
+	Error                error       `json:"error,omitempty"`
+	EdgesDetected        int         `json:"edges,omitempty"`
+	NodesDetected        int         `json:"nodes,omitempty"`
+	OrphanNodesInGraph   int         `json:"orphan_nodes,omitempty"`
+	TxOriginVulnerable   *bool       `json:"tx_origin_vulnerable,omitempty"`
+	ReEntrancyVulnerable *bool       `json:"re_entrancy_vulnerable,omitempty"`
+	CFGCreated           bool        `json:"cfg_created,omitempty"`
+	DotGraph             string      `json:"dot_graph,omitempty"`
+	Coverage             *float64    `json:"coverage,omitempty"`
+	Metrics              *CFGMetrics `json:"metrics,omitempty"`
 }
 
 func (s *ScanResult) WithGraph(dot string, fileId string, result *Result) error {
@@ -40,15 +41,12 @@ func (s *ScanResult) WithGraph(dot string, fileId string, result *Result) error 
 	s.DotGraph = dot
 	s.CFGCreated = len(dot) > 0
 
-	if s.Coverage == nil || *s.Coverage == 0 {
-		var nodesRead int
-		nodesRead, s.OrphanNodesInGraph, _ = CountOrphanNodes(dot)
-		if s.NodesDetected == 0 {
-			s.NodesDetected = nodesRead
-		}
-		// calculate coverage based on .dot file data instead of tool result
-		readCoverage := float64((nodesRead-s.OrphanNodesInGraph)*100) / float64(nodesRead)
-		s.Coverage = &readCoverage
+	// Calculate detailed metrics
+	if metrics, err := AnalyzeCFG(dot); err == nil {
+		s.Metrics = metrics
+		// Update detected nodes/edges if not already set or override if analysis is more accurate
+		s.NodesDetected = metrics.NodeCount
+		s.EdgesDetected = metrics.EdgeCount
 	}
 
 	return nil
@@ -63,10 +61,10 @@ func (s *ScanResult) String() string {
 	if s == nil {
 		return ""
 	}
-	dot := s.DotGraph
-	s.DotGraph = ""
-	raw, _ := json.Marshal(s)
-	s.DotGraph = dot
+	// Copy by value to avoid mutating the original (data race if called concurrently)
+	copy := *s
+	copy.DotGraph = ""
+	raw, _ := json.Marshal(&copy)
 	return string(raw)
 }
 

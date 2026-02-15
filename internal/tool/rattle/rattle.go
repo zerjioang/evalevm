@@ -33,6 +33,8 @@ func NewRattle() Rattle {
 	app.LastCommit = "2 years ago"
 	app.Language = "python"
 	app.Dockerfile = rattleDockerfile
+	app.SupportsVulnerabilities = false
+	app.SupportsCFG = true
 	return app
 }
 

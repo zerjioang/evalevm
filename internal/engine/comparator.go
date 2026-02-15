@@ -2,7 +2,7 @@ package engine
 
 import (
 	"evalevm/internal/datatype"
-	"evalevm/internal/tool/byteinspector"
+	"evalevm/internal/tool/bytespector"
 	"evalevm/internal/tool/ethersolve"
 	"evalevm/internal/tool/evm_cfg"
 	"evalevm/internal/tool/evm_cfg_builder"
@@ -24,17 +24,18 @@ type Comparator struct {
 	pool         *datatype.WorkerPool
 }
 
-func NewComparator() Comparator {
+func NewComparator(audit bool) Comparator {
 	analyzerList := []datatype.Analyzer{
 		// tool.NewAcuaricaEVM(),
-		byteinspector.NewByteInspector(),
+		bytespector.NewByteInspector(),
 		// conkas.NewConkas(),
 		// tool.NewDefectChecker(),
 		ethersolve.NewEthersolveCreator(),
 		ethersolve.NewEthersolveRuntime(),
+		ethersolve.NewEthersolveDetection(),
 		evm_cfg.NewEvmCFG(),
 		evm_cfg_builder.NewEvmCFGBuilder(),
-		evmlisa.NewEvmLisa(),
+		evmlisa.NewEvmLisa(audit),
 		evmole.NewEVMole(),
 		// tool.NewGigaHorse(),
 		// tool.NewHeimdall(),
@@ -65,15 +66,24 @@ func NewComparator() Comparator {
 	}
 }
 
-func NewPaperOnlyComparator() Comparator {
-	analyzerList := []datatype.Analyzer{
-		paper.NewPaper(),
+// FilterByTools filters the analyzer list to only include analyzers whose
+// Name() matches one of the provided names. If names is empty, no filtering
+// is applied. This allows the --tools flag to select specific tools.
+func (c *Comparator) FilterByTools(names []string) {
+	if len(names) == 0 {
+		return
 	}
-	return Comparator{
-		analyzerList: analyzerList,
-		threads:      runtime.NumCPU(),
-		pool:         datatype.NewWorkerPool(),
+	allowed := make(map[string]bool, len(names))
+	for _, n := range names {
+		allowed[n] = true
 	}
+	filtered := make([]datatype.Analyzer, 0, len(names))
+	for _, a := range c.analyzerList {
+		if allowed[a.Name()] {
+			filtered = append(filtered, a)
+		}
+	}
+	c.analyzerList = filtered
 }
 
 func (c Comparator) Analyzers() []datatype.Analyzer {
@@ -120,10 +130,10 @@ func (c Comparator) SubmitAndWait(hexBytecode string, sampleId string) datatype.
 			wg.Add(1)
 			task.WithResultParser(analyzer)
 			c.pool.Submit(task)
-			go func() {
-				<-task.FinishChan()
+			go func(t datatype.Task) {
+				<-t.FinishChan()
 				wg.Done()
-			}()
+			}(task)
 		}
 	}
 	wg.Wait()

@@ -10,11 +10,6 @@ type EthersolveRuntime struct {
 	datatype.BytecodeAnalyzer
 }
 
-const noFindings = `[]
-offset,opcode,detection
-offset,opcode,detection
-`
-
 var (
 	//go:embed Dockerfile
 	ethersolveDockerfile string
@@ -36,6 +31,8 @@ func NewEthersolveRuntime() EthersolveRuntime {
 	app.LastCommit = "2 years ago"
 	app.Language = "java"
 	app.Dockerfile = ethersolveDockerfile
+	app.SupportsVulnerabilities = false
+	app.SupportsCFG = true
 	return app
 }
 

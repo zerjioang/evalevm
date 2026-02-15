@@ -31,6 +31,8 @@ func NewEVMole() EVMole {
 	app.LastCommit = "last week"
 	app.Language = "rust"
 	app.Dockerfile = evmoleDockerfile
+	app.SupportsVulnerabilities = false
+	app.SupportsCFG = true
 	return app
 }
 

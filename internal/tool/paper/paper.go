@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/awalterschulze/gographviz"
 	"github.com/zerjioang/rooftop/v2/common/io/json"
 )
 
@@ -36,6 +37,8 @@ func NewPaper() Paper {
 	app.LastCommit = "today"
 	app.Language = "go"
 	app.Dockerfile = paperDockerfile
+	app.SupportsVulnerabilities = true
+	app.SupportsCFG = true
 	return app
 }
 
@@ -124,15 +127,51 @@ func (scan Paper) ParseOutput(output *datatype.Result) error {
 		NodesDetected: nodesDetected,
 		Coverage:      &dst.Coverage,
 	}
-	if dst.Graphs.Constructor != "" {
-		if err := output.ParsedOutput.WithGraph(dst.Graphs.Constructor, "constructor", output); err != nil {
+
+	// Strip the synthetic "start" node from DOT graphs before metrics calculation
+	// because it's an artificial entry node added by the paper tool
+	constructorDot := stripStartNode(dst.Graphs.Constructor)
+	runtimeDot := stripStartNode(dst.Graphs.Runtime)
+
+	if constructorDot != "" {
+		if err := output.ParsedOutput.WithGraph(constructorDot, "constructor", output); err != nil {
 			return fmt.Errorf("failed to store .dot graph: %w", err)
 		}
 	}
 
-	if err := output.ParsedOutput.WithGraph(dst.Graphs.Runtime, "runtime", output); err != nil {
+	if err := output.ParsedOutput.WithGraph(runtimeDot, "runtime", output); err != nil {
 		return fmt.Errorf("failed to store .dot graph: %w", err)
 	}
 
 	return nil
+}
+
+// stripStartNode removes the synthetic "start" node and all its edges from a DOT graph
+// using the gographviz library for robust graph manipulation.
+func stripStartNode(dot string) string {
+	if dot == "" {
+		return dot
+	}
+
+	parsed, err := gographviz.ParseString(dot)
+	if err != nil {
+		log.Printf("stripStartNode: failed to parse DOT, returning original: %v", err)
+		return dot
+	}
+
+	graph := gographviz.NewGraph()
+	if err := gographviz.Analyse(parsed, graph); err != nil {
+		log.Printf("stripStartNode: failed to analyse graph, returning original: %v", err)
+		return dot
+	}
+
+	// Remove the start node (and all its edges) if it exists
+	if graph.IsNode("start") {
+		if err := graph.RemoveNode(graph.Name, "start"); err != nil {
+			log.Printf("stripStartNode: failed to remove start node: %v", err)
+			return dot
+		}
+	}
+
+	return graph.String()
 }

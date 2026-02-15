@@ -34,6 +34,8 @@ func NewVandal() Vandal {
 	app.Language = "python"
 	app.Platform = "linux/amd64"
 	app.Dockerfile = vandalDockerfile
+	app.SupportsVulnerabilities = true
+	app.SupportsCFG = true
 	return app
 }
 

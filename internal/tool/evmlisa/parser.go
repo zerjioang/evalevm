@@ -3,7 +3,6 @@ package evmlisa
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -79,14 +78,13 @@ func parseOffsetData(data string) (map[string]parsedOffsetFile, error) {
 			}
 			filename := strings.TrimSpace(strings.TrimPrefix(line, ">>> "))
 			filename = filepath.Base(filename)
-			fmt.Println("filename: ", filename)
 			current = &parsedOffsetFile{
 				File: filename,
 			}
 
 		case strings.HasPrefix(line, "<<<"):
 			if current != nil {
-				current.Content = []byte(writer.String())
+				current.Content = writer.Bytes()
 				writer.Reset()
 				results[current.File] = *current
 				current = nil
@@ -94,7 +92,6 @@ func parseOffsetData(data string) (map[string]parsedOffsetFile, error) {
 
 		default:
 			if current != nil && len(strings.TrimSpace(line)) > 0 {
-				fmt.Println("adding line to file: ", current.File, line)
 				writer.WriteString(line)
 				writer.WriteString("\n")
 			}

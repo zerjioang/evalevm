@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"os/exec"
+	"sync"
 )
 
 // CommandOutputHandler is a function type used to handle output lines.
@@ -27,9 +28,18 @@ func RunDockerCommand(ctx context.Context, args []string, handler CommandOutputH
 		return err
 	}
 
-	// Stream both stdout and stderr
-	go streamOutput(stdoutPipe, false, handler)
-	go streamOutput(stderrPipe, true, handler)
+	// Stream both stdout and stderr, wait for readers to finish before cmd.Wait()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		streamOutput(stdoutPipe, false, handler)
+	}()
+	go func() {
+		defer wg.Done()
+		streamOutput(stderrPipe, true, handler)
+	}()
+	wg.Wait()
 
 	return cmd.Wait()
 }

@@ -4,7 +4,9 @@ import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/engine"
 	"evalevm/internal/render"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -12,18 +14,15 @@ import (
 
 func ScanBytecodeCmd() *cobra.Command {
 
-	type scanBytecodeFlag struct {
-		bytecodeHex string
-	}
-
-	var flags scanBytecodeFlag
+	var opts scanOpts
+	var bytecodeHex string
 
 	scanCmd := &cobra.Command{
 		Use:   "evm",
 		Short: "scan single evm bytecode",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if flags.bytecodeHex == "" || flags.bytecodeHex == "0x" {
+			if bytecodeHex == "" || bytecodeHex == "0x" {
 				return nil
 			}
 
@@ -33,10 +32,13 @@ func ScanBytecodeCmd() *cobra.Command {
 				log.Printf("tool benchmark completed in %s", elapsed)
 			}()
 
-			cmp := engine.NewComparator()
+			cmp := engine.NewComparator(opts.audit)
+			if opts.tools != "" {
+				cmp.FilterByTools(strings.Split(opts.tools, ","))
+			}
 			cmp.Start()
 
-			taskset := cmp.SubmitAndWait(flags.bytecodeHex, "")
+			taskset := cmp.SubmitAndWait(bytecodeHex, "")
 
 			log.Println("all tools evaluated and benchmark completed for the evm bytecode sample. exporting results")
 
@@ -44,7 +46,7 @@ func ScanBytecodeCmd() *cobra.Command {
 				return err
 			}
 
-			// also render the scanners with success
+			// render success results
 			for _, result := range taskset {
 				if !result.Failed() {
 					_ = render.ScanSuccess(datatype.ScanSuccess{
@@ -54,7 +56,7 @@ func ScanBytecodeCmd() *cobra.Command {
 				}
 			}
 
-			// also render the scanners with errors
+			// render error results
 			for _, result := range taskset {
 				if result.Failed() {
 					_ = render.ScanError(datatype.ScanErrorDetails{
@@ -64,14 +66,30 @@ func ScanBytecodeCmd() *cobra.Command {
 				}
 			}
 
-			if err := render.ScanResults(taskset); err != nil {
-				return err
+			// check coverage if requested
+			if opts.coverage {
+				for _, result := range taskset {
+					if !result.Failed() && result.Result().ParsedOutput != nil {
+						cov := result.Result().ParsedOutput.Coverage
+						if cov != nil && *cov < 100 {
+							return fmt.Errorf("coverage check failed: %s reported %.2f%% coverage (< 100%%)", result.ID().App(), *cov)
+						}
+					}
+				}
+			}
+
+			// export CSV if requested
+			if opts.csvExport {
+				if err := exportTaskSetCSV(taskset); err != nil {
+					return fmt.Errorf("CSV export failed: %w", err)
+				}
 			}
 
 			return nil
 		},
 	}
 
-	scanCmd.Flags().StringVarP(&flags.bytecodeHex, "bytecode", "b", "", "bytecode in hex")
+	scanCmd.Flags().StringVarP(&bytecodeHex, "bytecode", "b", "", "bytecode in hex")
+	bindScanFlags(scanCmd, &opts)
 	return scanCmd
 }

@@ -3,6 +3,7 @@ module evalevm
 go 1.24
 
 require (
+	github.com/awalterschulze/gographviz v2.0.3+incompatible
 	github.com/fatih/color v1.16.0
 	github.com/json-iterator/go v1.1.12
 	github.com/olekukonko/tablewriter v1.0.8

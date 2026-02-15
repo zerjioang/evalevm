@@ -26,6 +26,8 @@ func NewEthersolveCreator() EthersolveCreator {
 	app.LastCommit = "2 years ago"
 	app.Language = "java"
 	app.Dockerfile = ethersolveDockerfile
+	app.SupportsVulnerabilities = false
+	app.SupportsCFG = true
 	return app
 }
 

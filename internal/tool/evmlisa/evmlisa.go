@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"evalevm/internal/datatype"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/zerjioang/rooftop/v2/common/io/json"
@@ -21,7 +22,7 @@ type EvmLisa struct {
 
 var _ datatype.Analyzer = (*EvmLisa)(nil)
 
-func NewEvmLisa() EvmLisa {
+func NewEvmLisa(audit bool) EvmLisa {
 	app := EvmLisa{}
 	app.BytecodeAnalyzer = app.SetupDockerPlatform()
 	app.AppName = "evm-lisa"
@@ -30,6 +31,7 @@ func NewEvmLisa() EvmLisa {
 	app.Options = datatype.BytecodeScanOpts{
 		ForceRemoveHexPrefix: false,
 		ForceSplitRuntime:    false,
+		Audit:                audit,
 	}
 	app.Deprecated = false
 	app.LastCommit = "2 months ago"
@@ -37,6 +39,8 @@ func NewEvmLisa() EvmLisa {
 	app.Creator = ""
 	app.PaperURL = "https://vincenzoarceri.github.io/papers/ftfjp2024.pdf"
 	app.Dockerfile = evmLisaDockerfile
+	app.SupportsVulnerabilities = true
+	app.SupportsCFG = true
 	return app
 }
 
@@ -46,7 +50,8 @@ func (scan EvmLisa) CreateTask(uid string, bytecode string, filename string) []d
 	if scan.WorkDir == "" {
 		path, err := scan.createTempDir("evm-lisa")
 		if err != nil {
-			panic(err)
+			log.Printf("evmlisa: failed to create temp dir: %v", err)
+			return nil
 		}
 		scan.WorkDir = path
 	}
@@ -60,8 +65,13 @@ func (scan EvmLisa) CreateTask(uid string, bytecode string, filename string) []d
 		"-v", resultsMount,
 		"local/evm-lisa",
 		"-c",
-		fmt.Sprintf(`./helper.sh evmlisa %s`, bytecode),
 	}
+
+	cmd := fmt.Sprintf(`./helper.sh evmlisa %s`, bytecode)
+	if scan.Options.Audit {
+		cmd += " --checker-all"
+	}
+	dockerArgs = append(dockerArgs, cmd)
 
 	return []datatype.Task{
 		datatype.NewDockerTask(
