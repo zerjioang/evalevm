@@ -4,7 +4,6 @@ import (
 	"evalevm/internal/datatype"
 	"evalevm/internal/tool/bytespector"
 	"evalevm/internal/tool/ethersolve"
-	"evalevm/internal/tool/ethir"
 	"evalevm/internal/tool/evm_cfg"
 	"evalevm/internal/tool/evm_cfg_builder"
 	"evalevm/internal/tool/evmlisa"
@@ -28,7 +27,7 @@ type Comparator struct {
 
 func NewComparator(audit bool, runMode string) Comparator {
 	analyzerList := []datatype.Analyzer{
-		ethir.NewEthIR(),
+		//ethir.NewEthIR(),
 		bytespector.NewByteInspector(),
 		// conkas.NewConkas(),
 		// tool.NewDefectChecker(),

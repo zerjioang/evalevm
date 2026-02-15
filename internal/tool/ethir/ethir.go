@@ -50,7 +50,7 @@ func (scan EthIR) CreateTask(uid string, bytecode string, filename string) []dat
 				// Output in /tmp/costabs/. I need to find the file and cat it.
 				// Likely /tmp/costabs/code.evm.dot or similar.
 				// I'll cat everything in /tmp/costabs just in case for now or find .dot file.
-				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python3 ethir/ethir.py -s code.evm -b -cfg normal && find /tmp/costabs -name "*.dot" -exec cat {} \;'`, bytecode),
+				fmt.Sprintf(`echo %s > code.evm && ./measure.sh bash -c 'python3 ethir/ethir.py -s code.evm --bytecode -cfg all && find /tmp/costabs -name "*.dot" -exec cat {} \;'`, bytecode),
 			},
 		),
 	}
