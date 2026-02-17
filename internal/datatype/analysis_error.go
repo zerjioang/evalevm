@@ -21,6 +21,8 @@ type ScanResult struct {
 	CFGCreated           bool        `json:"cfg_created,omitempty"`
 	DotGraph             string      `json:"dot_graph,omitempty"`
 	Coverage             *float64    `json:"coverage,omitempty"`
+	InvalidBytecode      bool        `json:"invalid_bytecode"`
+	InvalidPercentage    float64     `json:"invalid_percentage"`
 	Metrics              *CFGMetrics `json:"metrics,omitempty"`
 }
 
@@ -44,6 +46,8 @@ func (s *ScanResult) WithGraph(dot string, fileId string, result *Result) error 
 	// Calculate detailed metrics
 	if metrics, err := AnalyzeCFG(dot, result.Task.ID().App()); err == nil {
 		s.Metrics = metrics
+		s.Metrics.InvalidBytecode = s.InvalidBytecode
+		s.Metrics.InvalidPercentage = s.InvalidPercentage
 		// Update detected nodes/edges if not already set or override if analysis is more accurate
 		s.NodesDetected = metrics.NodeCount
 		s.EdgesDetected = metrics.EdgeCount

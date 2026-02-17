@@ -36,7 +36,7 @@ func ScanBytecodeCmd() *cobra.Command {
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
-			cmp.Start()
+			cmp.Start(cmd.Context())
 
 			taskset := cmp.SubmitAndWait(bytecodeHex, "")
 
@@ -82,7 +82,9 @@ func ScanBytecodeCmd() *cobra.Command {
 
 			// export CSV if requested
 			if opts.csvExport {
-				if err := exportTaskSetCSV(taskset); err != nil {
+				streamWriter := NewResultStreamWriter()
+				defer streamWriter.Close()
+				if err := streamWriter.Write(taskset); err != nil {
 					return fmt.Errorf("CSV export failed: %w", err)
 				}
 			}

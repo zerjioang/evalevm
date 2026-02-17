@@ -1,186 +1,34 @@
-## How to use this repository
+# EvalEVM 🦁
+[![Go Report Card](https://goreportcard.com/badge/github.com/zerjioang/evalevm)](https://goreportcard.com/report/github.com/zerjioang/evalevm)
+[![GoDoc](https://godoc.org/github.com/zerjioang/evalevm?status.svg)](https://godoc.org/github.com/zerjioang/evalevm)
+[![Build Status](https://travis-ci.org/zerjioang/evalevm.svg?branch=master)](https://travis-ci.org/zerjioang/evalevm)
+![GitHub](https://img.shields.io/github/license/zerjioang/evalevm)
 
-This repository is used to evaluate many different EVM security tools at once saving engineers and researcher many
-hours. First you need to build all the docker images on you device. To do so, run:
+> A modular framework for evaluating and comparing EVM static analysis tools using Docker.
 
-```go
-go build && ./evalevm analyzer build --tools ./tools
-```
+## Documentation 📚
 
-> Make sure to point to ./tools directory of this same repository as the code will be used to create the images.
+Comprehensive documentation is available in the [`docs/`](./docs) directory:
 
-## Analyzers out of scope
+-   [**Introduction**](./docs/introduction.md): Overview and scientific context.
+-   [**Usage Guide**](./docs/usage.md): Installation, CLI commands, and configuration.
+-   [**Tools**](./docs/tools.md): List of supported analyzers and how to add new ones.
+-   [**Architecture**](./docs/architecture.md): System design and components.
+-   [**Glossary**](./docs/glossary.md): Terminology.
 
-The following analyzers and research tools are not considered because they require either Solidity, Vyper source code or
-ABI files definitions. Our initial selection of tools focus only on those that work with the bytecode only.
+## Quick Start 🚀
 
-* SmartCheck: this tool needs the contract source code to work.
+1.  **Build**: `make build`
+2.  **Build Analyzer Images**: `./dist/evalevm analyzer build`
+3.  **Scan**: `./dist/evalevm scan evm -b 6080604052...`
 
-## Vulnerability types and source code examples
+## Features ✨
 
-You can use the following examples as input for tools evaluation.
+-   **Docker Isolation**: Runs tools in ephemeral containers.
+-   **Parallel Execution**: Utilizes all CPU cores for batch processing.
+-   **Unified Metrics**: Standardizes output for easy comparison.
+-   **Result Caching**: Skips redundant scans automatically.
 
-### Hardcoded address detection
+## License
 
-```solidity
-pragma solidity 0.4.24;
-
-    contract C {
-        function f(uint a, uint b) pure returns (address) {
-            address public multisig = 0xf64B584972FE6055a770477670208d737Fff282f;
-            return multisig;
-        }
-    }
-```
-
-## Exact ETH equality
-
-```solidity
-pragma solidity 0.4.24;
-
-    contract C {
-        function valid pure returns (bool) {
-            return address(this).balance == 42 ether
-        }
-    }
-```
-
-## Division before multiplication
-
-```solidity
-pragma solidity 0.4.25;
-
-contract MyContract {
-
-    uint constant BONUS = 500;
-    uint constant DELIMITER = 10000;
-
-    function calculateBonus(uint amount) returns (uint) {
-        return amount/DELIMITER*BONUS;
-    }
-}
-```
-
-## Time equality
-
-```solidity
-pragma solidity 0.4.25;
-
-contract Game {
-
-    function oddOrEven(bool yourGuess) external payable {
-        if (yourGuess == now % 2 > 0) {
-            uint fee = msg.value / 10;
-            msg.sender.transfer(msg.value * 2 - fee);
-        }
-    }
-
-    function () external payable {}
-}
-```
-
-## Current Block Hash usage
-
-In EVM, the current block.hash is always zero.
-
-<code>blockhash</code> function returns a non-zero value only for 256 last blocks. Besides, it always returns 0 for the
-current block, i.e. <code>blockhash(block.number)</code> always equals to 0.
-
-```solidity
-pragma solidity 0.8.16;
-
-contract C {
-    function currentBlockHash() public view returns(bytes32) {
-        return blockhash(block.number); // 0
-    }
-}
-```
-
-## Contract that can lock Ether
-
-In the following example, contracts programmed to receive ether does not call <code>transfer</code>, <code>send</code>,
-or <code>call.value</code> function
-
-```solidity
-pragma solidity 0.4.25;
-
-contract BadMarketPlace {
-    function deposit() payable {
-        require(msg.value > 0);
-    }
-}
-```
-
-## Infinite loop
-
-```solidity
-pragma solidity 0.4.24;
-
-contract GreaterOrEqualToZero {
-
-    function infiniteLoop(uint border) returns(uint ans) {
-
-        for (uint i = border; i >= 0; i--) {
-            ans += i;
-        }
-    }
-}
-```
-
-In this case, <code>i >= 0</code> condition will always evaluate to true. The next value of <code>i</code> variable
-after <code>0</code> will be <code>2**256-1</code>. Thus, the loop will be infinite.
-
-```solidity
-contract Malicious {
-    function foo(uint) public {
-        while (true) {} // infinite loop
-    }
-}
-```
-
-## Transfer in a loop
-
-```solidity
-pragma solidity 0.4.25;
-
-contract MyContract {
-
-    address[] public users;
-    uint internal id;
-
-    function transferBatch(address[] users) public {
-        uint amount = address(this).balance / users.length;
-        for (uint i = 0; i < users.length; i++) {
-            users[i].transfer(amount);
-        }
-    }
-
-    function () public payable {
-        users[id] = msg.sender;
-        id++;
-    }
-}
-```
-
-## Unchecked call
-
-```solidity
-contract SolidityUncheckedSend {
-    function unseatKing(address addr, uint value) {
-        addr.send(value);
-    }
-}
-```
-
-## Troubleshooting
-
-How to check if there is an existing version of perf installed in the container
-
-```bash
-ls /usr/lib/linux-tools/*/perf
-```
-
-## References
-
-* https://github.com/hzysvilla/Academic_Smart_Contract_Papers
-* https://github.com/smartbugs/smartbugs
+MIT

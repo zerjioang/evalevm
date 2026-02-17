@@ -46,7 +46,7 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
-			cmp.Start()
+			cmp.Start(cmd.Context())
 
 			file, err := os.Open(path)
 			if err != nil {
@@ -63,7 +63,14 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 			}
 			log.Println("CSV header:", header)
 
-			var allTasks datatype.TaskSet
+			// Initialize streaming CSV writer if requested
+			var streamWriter *ResultStreamWriter
+			if opts.csvExport {
+				streamWriter = NewResultStreamWriter()
+				defer streamWriter.Close()
+			}
+
+			// Removed allTasks slice to prevents OOM on large datasets
 			for {
 				record, err := reader.Read()
 				if err != nil {
@@ -73,8 +80,8 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 					return fmt.Errorf("error reading CSV: %w", err)
 				}
 
-				// Skip comments
-				if len(record) == 0 || record[0] == "" || record[0][0] == '#' || (len(record[0]) > 1 && record[0][:2] == "//") {
+				// Skip comments or malformed rows
+				if len(record) < 3 || record[0] == "" || record[0][0] == '#' || (len(record[0]) > 1 && record[0][:2] == "//") {
 					continue
 				}
 
@@ -88,7 +95,6 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 
 				hasFailed := false
 				for _, result := range taskset {
-					allTasks = append(allTasks, result)
 					if result.Failed() {
 						_ = render.ScanError(datatype.ScanErrorDetails{
 							Name:    result.ID().App(),
@@ -116,16 +122,15 @@ func ScanBytecodeCSVCmd() *cobra.Command {
 					}
 				}
 
-				if err := render.ScanResults(taskset, opts.transpose); err != nil {
-					return err
+				// Stream results to CSV
+				if streamWriter != nil {
+					if err := streamWriter.Write(taskset); err != nil {
+						return fmt.Errorf("failed to stream results to CSV: %w", err)
+					}
 				}
-			}
 
-			// export CSV if requested
-			if opts.csvExport {
-				if err := exportTaskSetCSV(allTasks); err != nil {
-					return fmt.Errorf("CSV export failed: %w", err)
-				}
+				// Omitted render.ScanResults to prevent terminal flooding and reduce memory usage
+
 			}
 
 			return nil

@@ -39,6 +39,8 @@ type CFGMetrics struct {
 	ReachableNodes     int     // Cantidad de nodos visitables desde el inicio
 	CodeCoverage       float64 // % de nodos alcanzables (0.0 a 100.0)
 	MaxDepth           int     // Distancia al nodo más lejano (Profundidad del árbol)
+	InvalidBytecode    bool
+	InvalidPercentage  float64
 }
 
 func (m *CFGMetrics) Headers() []string {
@@ -62,6 +64,8 @@ func (m *CFGMetrics) Headers() []string {
 		"Coverage %",
 		"MaxDepth",
 		"Orphans",
+		"IsInvalid",
+		"Invalid %",
 	}
 }
 
@@ -94,6 +98,8 @@ func (m *CFGMetrics) Rows() []string {
 		fmt.Sprintf("%.2f%%", m.CodeCoverage),
 		fmt.Sprintf("%d", m.MaxDepth),
 		orphansStr,
+		fmt.Sprintf("%v", m.InvalidBytecode),
+		fmt.Sprintf("%.2f%%", m.InvalidPercentage),
 	}
 }
 

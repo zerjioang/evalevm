@@ -36,9 +36,9 @@ func NewWorkerPool() *WorkerPool {
 	}
 }
 
-func (wp *WorkerPool) Run() {
+func (wp *WorkerPool) Run(ctx context.Context) {
 	for i := 0; i < wp.WorkerCount; i++ {
-		go wp.worker(i)
+		go wp.worker(ctx, i)
 	}
 	wp.wg.Wait()
 }
@@ -52,9 +52,17 @@ func (wp *WorkerPool) Close() {
 	close(wp.Tasks)
 }
 
-func (wp *WorkerPool) worker(workerID int) {
-	for task := range wp.Tasks {
-		wp.executeTask(workerID, task)
+func (wp *WorkerPool) worker(ctx context.Context, workerID int) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case task, ok := <-wp.Tasks:
+			if !ok {
+				return
+			}
+			wp.executeTask(ctx, workerID, task)
+		}
 	}
 }
 
@@ -63,7 +71,7 @@ func (wp *WorkerPool) worker(workerID int) {
 // - A panic in one task doesn't kill the worker goroutine
 // - wg.Done() is always called even after a panic
 // - Context cancel is always called (no leak)
-func (wp *WorkerPool) executeTask(workerID int, task Task) {
+func (wp *WorkerPool) executeTask(ctx context.Context, workerID int, task Task) {
 	defer wp.wg.Done()
 	defer func() {
 		if r := recover(); r != nil {
@@ -73,7 +81,8 @@ func (wp *WorkerPool) executeTask(workerID int, task Task) {
 
 	log.Printf("[Worker %d] Task %s started", workerID, task.ID())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	// Use the parent context for cancellation, but add a timeout
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	var stdout, stderr bytes.Buffer

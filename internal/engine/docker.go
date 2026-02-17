@@ -46,8 +46,21 @@ func RunDockerCommand(ctx context.Context, args []string, handler CommandOutputH
 
 // streamOutput reads from the given pipe and sends each line to the handler.
 func streamOutput(pipe io.ReadCloser, isStderr bool, handler CommandOutputHandler) {
-	scanner := bufio.NewScanner(pipe)
-	for scanner.Scan() {
-		handler(scanner.Text(), isStderr)
+	reader := bufio.NewReader(pipe)
+	for {
+		line, err := reader.ReadString('\n')
+		if len(line) > 0 {
+			// Trim the newline suffix if present, as scanner.Text() did
+			if line[len(line)-1] == '\n' {
+				line = line[:len(line)-1]
+			}
+			handler(line, isStderr)
+		}
+		if err != nil {
+			if err != io.EOF {
+				// Handle error if necessary, possibly logging it
+			}
+			break
+		}
 	}
 }

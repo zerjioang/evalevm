@@ -19,6 +19,7 @@ func ScanBytecodeDirCmd() *cobra.Command {
 
 	var opts scanOpts
 	var path string
+	var extensions string
 
 	scanCmd := &cobra.Command{
 		Use:     "dir",
@@ -36,7 +37,7 @@ func ScanBytecodeDirCmd() *cobra.Command {
 				log.Printf("dir tool benchmark scan completed in %s", elapsed)
 			}()
 
-			files, err := scanDirRecursive(path)
+			files, err := scanDirRecursive(path, extensions)
 			if err != nil {
 				return fmt.Errorf("failed to scan directory: %w", err)
 			}
@@ -45,9 +46,16 @@ func ScanBytecodeDirCmd() *cobra.Command {
 			if opts.tools != "" {
 				cmp.FilterByTools(strings.Split(opts.tools, ","))
 			}
-			cmp.Start()
+			cmp.Start(cmd.Context())
 
-			var renderTasks datatype.TaskSet
+			// Initialize streaming CSV writer if requested
+			var streamWriter *ResultStreamWriter
+			if opts.csvExport {
+				streamWriter = NewResultStreamWriter()
+				defer streamWriter.Close()
+			}
+
+			// Removed renderTasks slice to prevent OOM
 			for i, file := range files {
 				log.Printf("submitting task %d/%d: %s", i+1, len(files), file)
 				content, err := os.ReadFile(file)
@@ -59,7 +67,6 @@ func ScanBytecodeDirCmd() *cobra.Command {
 
 				hasFailed := false
 				for _, result := range taskset {
-					renderTasks = append(renderTasks, result)
 					if result.Failed() {
 						_ = render.ScanError(datatype.ScanErrorDetails{
 							Name:    result.ID().App(),
@@ -67,10 +74,8 @@ func ScanBytecodeDirCmd() *cobra.Command {
 						})
 						hasFailed = true
 					} else {
-						_ = render.ScanSuccess(datatype.ScanSuccess{
-							Name:   result.ID().App(),
-							Output: result.Result().ParsedOutput.String(),
-						})
+						// Optional: Log success instead of rendering table
+						// log.Printf("scanned %s with %s", filebase, result.ID().App())
 					}
 				}
 
@@ -91,31 +96,47 @@ func ScanBytecodeDirCmd() *cobra.Command {
 						}
 					}
 				}
-			}
 
-			if err := render.ScanResults(renderTasks, opts.transpose); err != nil {
-				return err
-			}
-
-			// export CSV if requested
-			if opts.csvExport {
-				if err := exportTaskSetCSV(renderTasks); err != nil {
-					return fmt.Errorf("CSV export failed: %w", err)
+				// Stream results to CSV
+				if streamWriter != nil {
+					if err := streamWriter.Write(taskset); err != nil {
+						return fmt.Errorf("failed to stream results to CSV: %w", err)
+					}
 				}
 			}
+
+			// Omitted render.ScanResults to prevent terminal flooding and reduce memory usage
 
 			return nil
 		},
 	}
 
 	scanCmd.Flags().StringVarP(&path, "dataset", "d", "", "dataset path")
+	scanCmd.Flags().StringVar(&extensions, "extensions", "hex,evm,bin", "file extensions to scan (comma separated, e.g. hex,evm)")
 	bindScanFlags(scanCmd, &opts)
 	return scanCmd
 }
 
 // scanDirRecursive scans the directory `root` recursively and returns a slice of file paths.
-func scanDirRecursive(root string) ([]string, error) {
+func scanDirRecursive(root string, extensions string) ([]string, error) {
 	var files []string
+
+	allowedExts := make(map[string]bool)
+	if extensions != "" {
+		for _, ext := range strings.Split(extensions, ",") {
+			// Ensure extension starts with dot for comparison
+			ext = strings.TrimSpace(ext)
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			allowedExts[strings.ToLower(ext)] = true
+		}
+	} else {
+		// Default extensions
+		allowedExts[".hex"] = true
+		allowedExts[".evm"] = true
+		allowedExts[".bin"] = true
+	}
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -123,9 +144,11 @@ func scanDirRecursive(root string) ([]string, error) {
 			return err
 		}
 
-		// Skip directories themselves
-		if !d.IsDir() && (filepath.Ext(path) == ".hex" || filepath.Ext(path) == ".evm" || filepath.Ext(path) == ".bin") {
-			files = append(files, path)
+		if !d.IsDir() {
+			ext := strings.ToLower(filepath.Ext(path))
+			if allowedExts[ext] {
+				files = append(files, path)
+			}
 		}
 
 		return nil

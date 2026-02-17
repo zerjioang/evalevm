@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"context"
+	"encoding/json"
 	"evalevm/internal/datatype"
 	"evalevm/internal/tool/bytespector"
 	"evalevm/internal/tool/ethersolve"
@@ -13,7 +15,9 @@ import (
 	"evalevm/internal/tool/rattle"
 	"evalevm/internal/tool/vandal"
 	"evalevm/internal/uuid"
+	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -100,8 +104,8 @@ func (c Comparator) Threads() int {
 	return c.threads
 }
 
-func (c Comparator) Start() {
-	go c.pool.Run()
+func (c Comparator) Start(ctx context.Context) {
+	go c.pool.Run(ctx)
 }
 
 func (c Comparator) Submit(hexBytecode string, sampleId string) datatype.TaskSet {
@@ -112,8 +116,23 @@ func (c Comparator) Submit(hexBytecode string, sampleId string) datatype.TaskSet
 		hexBytecode = c.cleanBytecode(hexBytecode)
 		taskList := analyzer.CreateTask(taskId, hexBytecode, sampleId)
 		for _, task := range taskList {
-			ts = append(ts, task)
 			task.WithResultParser(analyzer)
+
+			// Try to load cached result first
+			if cached, err := c.tryLoadCachedResult(task); err == nil {
+				log.Printf("Using cached result for %s", task.ID())
+				// Link the loaded result to the task and vice versa
+				task.WithResult(cached)
+				// Send a signal to finish channel so consumers don't block
+				select {
+				case task.FinishChan() <- struct{}{}:
+				default:
+				}
+				ts = append(ts, task)
+				continue
+			}
+
+			ts = append(ts, task)
 			c.pool.Submit(task)
 		}
 	}
@@ -133,8 +152,23 @@ func (c Comparator) SubmitAndWait(hexBytecode string, sampleId string) datatype.
 		taskList := analyzer.CreateTask(taskId, hexBytecode, sampleId)
 		for _, task := range taskList {
 			ts = append(ts, task)
-			wg.Add(1)
 			task.WithResultParser(analyzer)
+
+			// Try to load cached result first
+			if cached, err := c.tryLoadCachedResult(task); err == nil {
+				log.Printf("Using cached result for %s", task.ID())
+				// Link the loaded result to the task and vice versa
+				task.WithResult(cached)
+				// Signal completion immediately
+				select {
+				case task.FinishChan() <- struct{}{}:
+				default:
+				}
+				// Do NOT add to waitgroup or submit to pool
+				continue
+			}
+
+			wg.Add(1)
 			c.pool.Submit(task)
 			go func(t datatype.Task) {
 				<-t.FinishChan()
@@ -152,4 +186,41 @@ func (c Comparator) cleanBytecode(bytecode string) string {
 		return bytecode[2:]
 	}
 	return bytecode
+}
+
+// tryLoadCachedResult attempts to find and load a previously saved result file
+// for the given task. Returns nil if file not found or load fails.
+func (c *Comparator) tryLoadCachedResult(task datatype.Task) (*datatype.Result, error) {
+	// Reconstruct the expected filename: result_<App>_<TrackerId>.json
+	filename := fmt.Sprintf("result_%s_%s.json", task.ID().App(), task.TrackerId())
+
+	// Check if file exists
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal into a shadow struct to handle interface fields (Task, Error)
+	// which json.Unmarshal cannot handle directly.
+	type cachedResult struct {
+		datatype.Result
+		Task  json.RawMessage `json:"task"`
+		Error json.RawMessage `json:"error"`
+	}
+
+	var shadow cachedResult
+	if err := json.Unmarshal(content, &shadow); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal cached result: %w", err)
+	}
+
+	// Reconstruct the valid Result
+	res := &shadow.Result
+	res.Task = task // Link back to the live task
+	res.Error = nil // Error interface cannot be fully restored from JSON generic object, assume nil or rely on other fields
+
+	return res, nil
 }

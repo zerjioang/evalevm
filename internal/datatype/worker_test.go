@@ -1,12 +1,13 @@
 package datatype
 
 import (
+	"context"
 	"testing"
 )
 
 func TestNewWorkerPool(t *testing.T) {
 	pool := NewWorkerPool() // 4 concurrent workers
-	go pool.Run()
+	go pool.Run(context.Background())
 
 	task := &DockerTask{
 		id:  TaskId{},
@@ -19,7 +20,7 @@ func TestNewWorkerPool(t *testing.T) {
 
 func TestWorkerPoolMeasure(t *testing.T) {
 	pool := NewWorkerPool() // 4 concurrent workers
-	go pool.Run()
+	go pool.Run(context.Background())
 
 	// docker run --rm -v /path/to/measure.sh:/measure.sh:ro myimage /measure.sh somecommand arg1 arg2
 	task := &DockerTask{

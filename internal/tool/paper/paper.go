@@ -79,6 +79,8 @@ type paperOutput struct {
 	Graphs              Graphs      `json:"graphs"`
 	SectionData         SectionData `json:"section_data"`
 	Coverage            float64     `json:"coverage"`
+	InvalidBytecode     bool        `json:"invalid_bytecode"`
+	InvalidPercentage   float64     `json:"invalid_percentage"`
 }
 type Graphs struct {
 	Runtime     string `json:".runtime"`
@@ -121,11 +123,13 @@ func (scan Paper) ParseOutput(output *datatype.Result) error {
 
 	var asPtrBool = func(b bool) *bool { return &b }
 	output.ParsedOutput = &datatype.ScanResult{
-		Vulnerable:    asPtrBool(len(dst.Vulnerabilities) > 0),
-		Error:         nil,
-		EdgesDetected: edgesDetected,
-		NodesDetected: nodesDetected,
-		Coverage:      &dst.Coverage,
+		Vulnerable:        asPtrBool(len(dst.Vulnerabilities) > 0),
+		Error:             nil,
+		EdgesDetected:     edgesDetected,
+		NodesDetected:     nodesDetected,
+		Coverage:          &dst.Coverage,
+		InvalidBytecode:   dst.InvalidBytecode,
+		InvalidPercentage: dst.InvalidPercentage,
 	}
 
 	// Strip the synthetic "start" node from DOT graphs before metrics calculation
